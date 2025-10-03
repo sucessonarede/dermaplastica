@@ -114,7 +114,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-foreground">Ações Rápidas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <Link href="/quotes/new">
               <Button className="w-full" data-testid="button-new-quote">
                 <Calculator className="h-4 w-4 mr-2" />
