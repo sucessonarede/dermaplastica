@@ -43,19 +43,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral da sua clínica</p>
+      <div className="rounded-xl bg-gradient-to-r from-[hsl(275,100%,26%)] via-[hsl(340,74%,62%)] to-[hsl(17,100%,61%)] p-8 text-primary-foreground hover-elevate">
+        <h1 className="font-serif text-3xl font-bold">Dashboard</h1>
+        <p className="text-primary-foreground/90">Visão geral da sua clínica</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="hover-elevate">
+        {stats.map((stat, index) => (
+          <Card key={stat.title} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <stat.icon className={`h-4 w-4 ${
+                index === 0 ? "text-[hsl(var(--primary))]" : 
+                index === 1 ? "text-[hsl(var(--chart-2))]" : 
+                index === 2 ? "text-[hsl(var(--chart-3))]" : 
+                "text-[hsl(var(--chart-4))]"
+              }`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{stat.value}</div>
@@ -69,9 +74,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">Orçamentos Recentes</CardTitle>
+        <Card className="ring-1 ring-[hsl(var(--chart-2))]/20">
+          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-2))]/5 to-transparent">
+            <CardTitle className="text-[hsl(var(--primary))]">Orçamentos Recentes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -90,10 +95,10 @@ export default function Dashboard() {
                       R$ {quote.value.toLocaleString()}
                     </p>
                     <span
-                      className={`inline-block text-xs px-2 py-1 rounded-full ${
+                      className={`inline-block text-xs px-2 py-1 rounded-full font-medium ${
                         quote.status === "Aceito"
-                          ? "bg-chart-4/10 text-chart-4"
-                          : "bg-chart-5/10 text-chart-5"
+                          ? "bg-[hsl(var(--chart-4))]/15 text-[hsl(var(--chart-4))]"
+                          : "bg-[hsl(var(--chart-3))]/15 text-[hsl(var(--chart-3))]"
                       }`}
                     >
                       {quote.status}
@@ -110,9 +115,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">Ações Rápidas</CardTitle>
+        <Card className="ring-1 ring-[hsl(var(--chart-3))]/20">
+          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-3))]/5 to-transparent">
+            <CardTitle className="text-[hsl(var(--primary))]">Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Link href="/quotes/new" className="block">

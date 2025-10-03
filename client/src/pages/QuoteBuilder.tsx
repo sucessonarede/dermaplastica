@@ -36,14 +36,14 @@ export default function QuoteBuilder() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-3xl font-bold text-foreground">Construtor de Orçamentos</h1>
+        <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Construtor de Orçamentos</h1>
         <p className="text-muted-foreground">Crie orçamentos personalizados rapidamente</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">1. Selecionar Paciente</CardTitle>
+        <Card className="ring-1 ring-[hsl(var(--primary))]/20">
+          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--primary))]/5 to-transparent">
+            <CardTitle className="text-[hsl(var(--primary))]">1. Selecionar Paciente</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -81,9 +81,9 @@ export default function QuoteBuilder() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">2. Selecionar Procedimentos</CardTitle>
+        <Card className="ring-1 ring-[hsl(var(--chart-2))]/20">
+          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-2))]/5 to-transparent">
+            <CardTitle className="text-[hsl(var(--primary))]">2. Selecionar Procedimentos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -101,7 +101,7 @@ export default function QuoteBuilder() {
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{procedure.name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge className="text-xs bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
                         {procedure.category}
                       </Badge>
                       <span className="text-sm font-semibold text-foreground">
@@ -115,9 +115,9 @@ export default function QuoteBuilder() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">3. Resumo</CardTitle>
+        <Card className="ring-1 ring-[hsl(var(--chart-3))]/20">
+          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-3))]/5 to-transparent">
+            <CardTitle className="text-[hsl(var(--primary))]">3. Resumo</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {selectedPatient && (

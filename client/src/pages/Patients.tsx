@@ -47,7 +47,7 @@ export default function Patients() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">Pacientes</h1>
+          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Pacientes</h1>
           <p className="text-muted-foreground">Gerencie seus pacientes e leads</p>
         </div>
         <Button data-testid="button-add-patient">
@@ -68,12 +68,16 @@ export default function Patients() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPatients.map((patient) => (
-          <Card key={patient.id} className="hover-elevate" data-testid={`card-patient-${patient.id}`}>
+        {filteredPatients.map((patient, index) => (
+          <Card key={patient.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20" data-testid={`card-patient-${patient.id}`}>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <Avatar>
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                  <AvatarFallback className={`${
+                    index % 3 === 0 ? "bg-[hsl(var(--primary))]" :
+                    index % 3 === 1 ? "bg-[hsl(var(--chart-2))]" :
+                    "bg-[hsl(var(--chart-3))]"
+                  } text-primary-foreground`}>
                     {patient.name.split(" ").map(n => n[0]).join("")}
                   </AvatarFallback>
                 </Avatar>
@@ -94,11 +98,11 @@ export default function Patients() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1 pt-2">
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge className="text-xs bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
                       {patient.origin}
                     </Badge>
                     {patient.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
+                      <Badge key={tag} className="text-xs bg-[hsl(var(--chart-3))]/15 text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3))]/30">
                         {tag}
                       </Badge>
                     ))}
