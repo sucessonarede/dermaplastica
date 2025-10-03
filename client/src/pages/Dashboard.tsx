@@ -115,19 +115,19 @@ export default function Dashboard() {
             <CardTitle className="text-foreground">Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Link href="/quotes/new">
+            <Link href="/quotes/new" className="block">
               <Button className="w-full" data-testid="button-new-quote">
                 <Calculator className="h-4 w-4 mr-2" />
                 Novo Orçamento
               </Button>
             </Link>
-            <Link href="/patients/new">
+            <Link href="/patients/new" className="block">
               <Button variant="outline" className="w-full" data-testid="button-new-patient">
                 <Users className="h-4 w-4 mr-2" />
                 Cadastrar Paciente
               </Button>
             </Link>
-            <Link href="/procedures">
+            <Link href="/procedures" className="block">
               <Button variant="outline" className="w-full" data-testid="button-manage-procedures">
                 Gerenciar Procedimentos
               </Button>
