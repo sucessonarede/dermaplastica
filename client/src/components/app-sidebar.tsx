@@ -6,6 +6,7 @@ import {
   Settings,
   Package,
   Calculator,
+  Presentation as PresentationIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,13 +28,18 @@ const menuItems = [
     icon: BarChart3,
   },
   {
+    title: "Apresentação",
+    url: "/apresentacao",
+    icon: PresentationIcon,
+  },
+  {
     title: "Pacientes",
     url: "/patients",
     icon: Users,
   },
   {
-    title: "Orçamentos",
-    url: "/quotes",
+    title: "Protocolo Dermalift",
+    url: "/protocolo-dermalift",
     icon: Calculator,
   },
   {

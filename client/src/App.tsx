@@ -13,6 +13,7 @@ import QuoteBuilder from "@/pages/QuoteBuilder";
 import Procedures from "@/pages/Procedures";
 import Reports from "@/pages/Reports";
 import ClinicSettings from "@/pages/ClinicSettings";
+import Presentation from "@/pages/Presentation";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,11 +21,13 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/patients" component={Patients} />
+      <Route path="/protocolo-dermalift" component={QuoteBuilder} />
       <Route path="/quotes" component={QuoteBuilder} />
       <Route path="/procedures" component={Procedures} />
       <Route path="/reports" component={Reports} />
       <Route path="/clinic" component={ClinicSettings} />
       <Route path="/settings" component={ClinicSettings} />
+      <Route path="/apresentacao" component={Presentation} />
       <Route component={NotFound} />
     </Switch>
   );
