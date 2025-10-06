@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { 
   Search, 
@@ -233,6 +234,9 @@ export default function QuoteBuilder() {
           <DialogContent className="sm:max-w-md" data-testid="dialog-select-patient">
             <DialogHeader>
               <DialogTitle>Selecionar Paciente</DialogTitle>
+              <DialogDescription>
+                Escolha o paciente para criar o protocolo personalizado
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="relative">

@@ -48,8 +48,17 @@ Preferred communication style: Simple, everyday language.
   3. Embelezamento (Beautification) - Orange themed
   4. Revitalização da Pele (Skin Revitalization) - Green/Blue themed
 - Interactive procedure selection with visual feedback
-- Real-time total calculation
+- **Quantity-based pricing (mL/syringes)**: Procedures can have mlPrice with min/max limits, +/- controls for adjusting quantities
+- **Custom price editing**: Inline price editing per item with visual indicators for modified prices
+- Real-time subtotal and total calculation with priority: customPrice > mlPrice × quantity > basePrice
 - Clean, professional design for in-clinic patient presentations
+
+**Presentation Module:**
+- Fullscreen presentation mode with 8 slides introducing Dermalift methodology
+- Embla Carousel for smooth slide transitions
+- Navigation via keyboard (arrows/ESC), mouse (next/prev buttons), and slide dots
+- Slides cover: Cover, Concept, 4 Pillars, Why It Works, Before/After, Personalized Plan, Safety/Experience, Call-to-Action
+- Final slide redirects to Quote Builder (/protocolo-dermalift) to begin protocol creation
 
 ### Backend Architecture
 
@@ -83,9 +92,11 @@ Preferred communication style: Simple, everyday language.
    - UUID primary keys
 
 2. **Procedures** - Service catalog with Dermalift Protocol
-   - Fields: id, name, description, price, protocol (pgEnum), category
+   - Fields: id, name, description, price, mlPrice, minMl, maxMl, protocol (pgEnum), category
    - Protocol enum: sustentacao, estruturacao, embelezamento, revitalizacao
    - Decimal pricing with 10,2 precision
+   - **mlPrice support**: Optional per-mL pricing for quantity-based procedures (e.g., fillers)
+   - **minMl/maxMl**: Constraints for quantity-based procedures
    - Each procedure categorized into one of the 4 Dermalift pillars
 
 3. **Patients** - CRM functionality
@@ -94,9 +105,14 @@ Preferred communication style: Simple, everyday language.
    - Tagging system for patient categorization
 
 4. **Quotes** - Dermalift Protocol-based quotes
-   - Fields: id, patientId, procedureIds (array), total, discount, status, createdAt, notes
-   - Links patients to selected procedures
+   - Fields: id, patientId, total, discount, status, createdAt, notes
+   - Links patients to quote items (via quoteItems table)
    - Tracks quote status (pending, accepted, etc.)
+
+5. **QuoteItems** - Line items for quotes
+   - Fields: id, quoteId, procedureId, quantity, customPrice, subtotal
+   - Tracks quantity and custom pricing per procedure in a quote
+   - Supports flexible pricing: custom override or calculated from quantity × mlPrice
 
 **Schema Validation:**
 - Zod schemas derived from Drizzle tables using drizzle-zod
