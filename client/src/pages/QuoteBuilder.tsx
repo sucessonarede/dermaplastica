@@ -19,7 +19,10 @@ import {
   Layers,
   Sparkles,
   Droplets,
-  Check
+  Check,
+  Plus,
+  Minus,
+  Edit2
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -31,13 +34,22 @@ interface Procedure {
   price: number;
   protocol: DermaliftProtocol;
   description?: string;
+  mlPrice?: number;
+  minMl?: number;
+  maxMl?: number;
+}
+
+interface SelectedItem {
+  quantity: number;
+  customPrice?: number;
 }
 
 export default function QuoteBuilder() {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const [selectedProcedures, setSelectedProcedures] = useState<number[]>([]);
+  const [selectedItems, setSelectedItems] = useState<Map<number, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingPrice, setEditingPrice] = useState<number | null>(null);
 
   const patients = [
     { id: 1, name: "Maria Silva", phone: "(11) 98765-4321" },
@@ -54,16 +66,16 @@ export default function QuoteBuilder() {
     
     // Estruturação
     { id: 4, name: "Harmonização Facial", price: 4500, protocol: "estruturacao", description: "Equilíbrio das proporções faciais" },
-    { id: 5, name: "Preenchimento Malar", price: 2800, protocol: "estruturacao", description: "Definição da região das maçãs" },
+    { id: 5, name: "Preenchimento Malar", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "estruturacao", description: "Definição da região das maçãs" },
     { id: 6, name: "Rinoplastia Não Cirúrgica", price: 3200, protocol: "estruturacao", description: "Correção do contorno nasal" },
     
     // Embelezamento
-    { id: 7, name: "Preenchimento Labial", price: 2400, protocol: "embelezamento", description: "Volume e definição dos lábios" },
+    { id: 7, name: "Preenchimento Labial", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "embelezamento", description: "Volume e definição dos lábios" },
     { id: 8, name: "Toxina Botulínica", price: 1200, protocol: "embelezamento", description: "Suavização de rugas dinâmicas" },
     { id: 9, name: "Lipo de Papada", price: 5500, protocol: "embelezamento", description: "Redução de gordura localizada" },
     
     // Revitalização da Pele
-    { id: 10, name: "Skinbooster", price: 1800, protocol: "revitalizacao", description: "Hidratação profunda da pele" },
+    { id: 10, name: "Skinbooster", mlPrice: 600, minMl: 1, maxMl: 4, price: 600, protocol: "revitalizacao", description: "Hidratação profunda da pele" },
     { id: 11, name: "Peeling Químico", price: 1200, protocol: "revitalizacao", description: "Renovação celular" },
     { id: 12, name: "Laser CO2 Fracionado", price: 3500, protocol: "revitalizacao", description: "Rejuvenescimento facial" },
   ];
@@ -107,10 +119,61 @@ export default function QuoteBuilder() {
     }
   };
 
-  const toggleProcedure = (id: number) => {
-    setSelectedProcedures((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+  const toggleProcedure = (procedure: Procedure) => {
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      if (newMap.has(procedure.id)) {
+        newMap.delete(procedure.id);
+      } else {
+        newMap.set(procedure.id, { 
+          quantity: procedure.mlPrice ? (procedure.minMl || 1) : 1 
+        });
+      }
+      return newMap;
+    });
+  };
+
+  const updateQuantity = (procedureId: number, delta: number, procedure: Procedure) => {
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      const item = newMap.get(procedureId);
+      if (item) {
+        const newQuantity = item.quantity + delta;
+        const minMl = procedure.minMl || 1;
+        const maxMl = procedure.maxMl || 10;
+        
+        if (newQuantity >= minMl && newQuantity <= maxMl) {
+          newMap.set(procedureId, { ...item, quantity: newQuantity });
+        }
+      }
+      return newMap;
+    });
+  };
+
+  const updateCustomPrice = (procedureId: number, price: string) => {
+    const numPrice = parseFloat(price);
+    if (!isNaN(numPrice) && numPrice > 0) {
+      setSelectedItems((prev) => {
+        const newMap = new Map(prev);
+        const item = newMap.get(procedureId);
+        if (item) {
+          newMap.set(procedureId, { ...item, customPrice: numPrice });
+        }
+        return newMap;
+      });
+    }
+  };
+
+  const removeCustomPrice = (procedureId: number) => {
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      const item = newMap.get(procedureId);
+      if (item) {
+        const { customPrice, ...rest } = item;
+        newMap.set(procedureId, rest);
+      }
+      return newMap;
+    });
   };
 
   const handleSelectPatient = (patient: any) => {
@@ -122,12 +185,27 @@ export default function QuoteBuilder() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const calculateSubtotal = (procedure: Procedure) => {
+    const item = selectedItems.get(procedure.id);
+    if (!item) return 0;
+
+    if (item.customPrice !== undefined) {
+      return item.customPrice;
+    }
+
+    if (procedure.mlPrice) {
+      return procedure.mlPrice * item.quantity;
+    }
+
+    return procedure.price;
+  };
+
   const total = procedures
-    .filter((p) => selectedProcedures.includes(p.id))
-    .reduce((sum, p) => sum + p.price, 0);
+    .filter((p) => selectedItems.has(p.id))
+    .reduce((sum, p) => sum + calculateSubtotal(p), 0);
 
   const selectedProceduresList = procedures.filter((p) =>
-    selectedProcedures.includes(p.id)
+    selectedItems.has(p.id)
   );
 
   return (
@@ -249,19 +327,23 @@ export default function QuoteBuilder() {
                 <CardContent className="pt-4">
                   <div className="space-y-2">
                     {protocolProcedures.map((procedure) => {
-                      const isSelected = selectedProcedures.includes(procedure.id);
+                      const isSelected = selectedItems.has(procedure.id);
+                      const item = selectedItems.get(procedure.id);
+                      
                       return (
                         <div
                           key={procedure.id}
-                          onClick={() => toggleProcedure(procedure.id)}
-                          className={`p-3 rounded-md border cursor-pointer transition-all ${
+                          className={`p-3 rounded-md border transition-all ${
                             isSelected
                               ? `${config.bgColor} ${config.borderColor} ring-2`
                               : "border-border hover-elevate"
                           }`}
                           data-testid={`procedure-${procedure.id}`}
                         >
-                          <div className="flex items-start justify-between gap-2">
+                          <div 
+                            className="flex items-start justify-between gap-2 cursor-pointer"
+                            onClick={() => !isSelected && toggleProcedure(procedure)}
+                          >
                             <div className="flex-1">
                               <p className={`font-medium ${isSelected ? config.textColor : "text-foreground"}`}>
                                 {procedure.name}
@@ -273,14 +355,90 @@ export default function QuoteBuilder() {
                               )}
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                R$ {procedure.price.toLocaleString()}
-                              </span>
-                              {isSelected && (
+                              {procedure.mlPrice ? (
+                                <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
+                                  R$ {procedure.mlPrice.toLocaleString()} / mL
+                                </span>
+                              ) : (
+                                <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
+                                  R$ {procedure.price.toLocaleString()}
+                                </span>
+                              )}
+                              {isSelected && !procedure.mlPrice && (
                                 <Check className={`h-4 w-4 ${config.textColor}`} />
                               )}
                             </div>
                           </div>
+                          
+                          {isSelected && procedure.mlPrice && item && (
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-7 w-7"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateQuantity(procedure.id, -1, procedure);
+                                  }}
+                                  disabled={item.quantity <= (procedure.minMl || 1)}
+                                  data-testid={`button-decrease-${procedure.id}`}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <span className={`text-sm font-medium min-w-[3rem] text-center ${config.textColor}`}>
+                                  {item.quantity} mL
+                                </span>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-7 w-7"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateQuantity(procedure.id, 1, procedure);
+                                  }}
+                                  disabled={item.quantity >= (procedure.maxMl || 10)}
+                                  data-testid={`button-increase-${procedure.id}`}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-semibold ${config.textColor}`}>
+                                  R$ {(procedure.mlPrice * item.quantity).toLocaleString()}
+                                </span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleProcedure(procedure);
+                                  }}
+                                  data-testid={`button-remove-${procedure.id}`}
+                                >
+                                  <Check className={`h-4 w-4 ${config.textColor}`} />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {isSelected && !procedure.mlPrice && (
+                            <div className="flex justify-end mt-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleProcedure(procedure);
+                                }}
+                                data-testid={`button-remove-${procedure.id}`}
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -311,20 +469,84 @@ export default function QuoteBuilder() {
                     <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       {selectedProceduresList.map((procedure) => {
                         const config = protocolConfig[procedure.protocol];
+                        const item = selectedItems.get(procedure.id);
+                        const subtotal = calculateSubtotal(procedure);
+                        const hasCustomPrice = item?.customPrice !== undefined;
+                        
                         return (
                           <div
                             key={procedure.id}
-                            className="flex justify-between items-start gap-2 text-sm rounded-md bg-muted p-2"
+                            className="rounded-md bg-muted p-3"
                           >
-                            <div className="flex-1">
-                              <p className="font-medium text-foreground">{procedure.name}</p>
-                              <Badge className={`text-xs mt-1 ${config.bgColor} ${config.textColor} border-0`}>
-                                {config.title}
-                              </Badge>
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                              <div className="flex-1">
+                                <p className="font-medium text-foreground text-sm">{procedure.name}</p>
+                                <Badge className={`text-xs mt-1 ${config.bgColor} ${config.textColor} border-0`}>
+                                  {config.title}
+                                </Badge>
+                                {procedure.mlPrice && item && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {item.quantity} mL × R$ {procedure.mlPrice}
+                                  </p>
+                                )}
+                              </div>
+                              {editingPrice === procedure.id ? (
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    type="number"
+                                    className="h-7 w-20 text-xs"
+                                    defaultValue={item?.customPrice || subtotal}
+                                    onBlur={(e) => {
+                                      const value = e.target.value;
+                                      if (value) {
+                                        updateCustomPrice(procedure.id, value);
+                                      }
+                                      setEditingPrice(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const value = (e.target as HTMLInputElement).value;
+                                        if (value) {
+                                          updateCustomPrice(procedure.id, value);
+                                        }
+                                        setEditingPrice(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                    data-testid={`input-price-${procedure.id}`}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-foreground text-sm whitespace-nowrap">
+                                    R$ {subtotal.toLocaleString()}
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6"
+                                    onClick={() => setEditingPrice(procedure.id)}
+                                    data-testid={`button-edit-price-${procedure.id}`}
+                                  >
+                                    <Edit2 className={`h-3 w-3 ${hasCustomPrice ? 'text-primary' : ''}`} />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
-                            <span className="font-semibold text-foreground whitespace-nowrap">
-                              R$ {procedure.price.toLocaleString()}
-                            </span>
+                            {hasCustomPrice && (
+                              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                                <span className="text-xs text-muted-foreground">Preço customizado</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 text-xs"
+                                  onClick={() => removeCustomPrice(procedure.id)}
+                                  data-testid={`button-reset-price-${procedure.id}`}
+                                >
+                                  Restaurar original
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -342,7 +564,7 @@ export default function QuoteBuilder() {
                     <div className="space-y-2">
                       <Button
                         className="w-full"
-                        disabled={!selectedPatient || selectedProcedures.length === 0}
+                        disabled={!selectedPatient || selectedProceduresList.length === 0}
                         data-testid="button-generate-pdf"
                       >
                         <FileText className="h-4 w-4 mr-2" />
@@ -351,7 +573,7 @@ export default function QuoteBuilder() {
                       <Button
                         variant="outline"
                         className="w-full"
-                        disabled={!selectedPatient || selectedProcedures.length === 0}
+                        disabled={!selectedPatient || selectedProceduresList.length === 0}
                         data-testid="button-share-quote"
                       >
                         <Download className="h-4 w-4 mr-2" />
