@@ -199,7 +199,7 @@ export default function QuoteBuilder() {
 
       {/* Nome do paciente selecionado */}
       {selectedPatient && (
-        <Card className="ring-1 ring-primary/20">
+        <Card className="ring-1 ring-primary/20" data-testid="card-selected-patient">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12">
@@ -209,7 +209,7 @@ export default function QuoteBuilder() {
               </Avatar>
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">Paciente</p>
-                <p className="text-lg font-semibold text-foreground">{selectedPatient.name}</p>
+                <p className="text-lg font-semibold text-foreground" data-testid="text-selected-patient-name">{selectedPatient.name}</p>
               </div>
             </div>
           </CardContent>
@@ -334,7 +334,7 @@ export default function QuoteBuilder() {
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-lg font-semibold text-foreground">Total</span>
-                      <span className="text-2xl font-bold text-primary">
+                      <span className="text-2xl font-bold text-primary" data-testid="text-total-amount">
                         R$ {total.toLocaleString()}
                       </span>
                     </div>

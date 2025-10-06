@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -17,6 +17,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export const dermaliftProtocolEnum = pgEnum("dermalift_protocol", ["sustentacao", "estruturacao", "embelezamento", "revitalizacao"]);
 export const dermaliftProtocols = ["sustentacao", "estruturacao", "embelezamento", "revitalizacao"] as const;
 export type DermaliftProtocol = typeof dermaliftProtocols[number];
 
@@ -25,7 +26,7 @@ export const procedures = pgTable("procedures", {
   name: text("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  protocol: text("protocol").notNull(),
+  protocol: dermaliftProtocolEnum("protocol").notNull(),
   category: text("category"),
 });
 
@@ -33,7 +34,7 @@ export const insertProcedureSchema = createInsertSchema(procedures).omit({
   id: true,
 }).extend({
   protocol: z.enum(dermaliftProtocols),
-  price: z.number().positive(),
+  price: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()),
 });
 
 export type InsertProcedure = z.infer<typeof insertProcedureSchema>;
@@ -75,8 +76,8 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
   id: true,
   createdAt: true,
 }).extend({
-  total: z.number().positive(),
-  discount: z.number().optional(),
+  total: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()),
+  discount: z.union([z.string(), z.number()]).pipe(z.coerce.number()).optional(),
 });
 
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
