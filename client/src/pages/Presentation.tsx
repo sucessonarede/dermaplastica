@@ -252,53 +252,29 @@ export default function Presentation() {
       id: 5,
       component: (
         <div className="flex flex-col items-center justify-center h-full px-8 py-16 bg-gradient-to-br from-background via-primary/5 to-background">
-          <div className="max-w-5xl w-full space-y-6">
-            <h2 className="text-4xl font-bold text-center">Antes & Depois</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="p-5 space-y-3">
+          <div className="max-w-4xl w-full space-y-6">
+            <h2 className="text-4xl font-bold text-center">Antes & Depois - Caso 1</h2>
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-8 space-y-4">
                 <div className="aspect-[4/3] bg-muted rounded-lg flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Antes do Tratamento</p>
+                  <p className="text-base text-muted-foreground">Antes do Tratamento</p>
                 </div>
-                <div className="space-y-1">
-                  <Badge variant="secondary" className="text-xs">Caso 1</Badge>
-                  <p className="text-xs text-muted-foreground">
+                <div className="space-y-2">
+                  <Badge variant="secondary" className="text-sm">Caso 1</Badge>
+                  <p className="text-sm text-muted-foreground">
                     Paciente de 45 anos com perda de volume e flacidez facial
                   </p>
                 </div>
               </Card>
 
-              <Card className="p-5 space-y-3 ring-2 ring-primary/30">
+              <Card className="p-8 space-y-4 ring-2 ring-primary/30">
                 <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-chart-2/20 rounded-lg flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Após Protocolo Dermalift</p>
+                  <p className="text-base text-muted-foreground">Após Protocolo Dermalift</p>
                 </div>
-                <div className="space-y-1">
-                  <Badge className="bg-primary text-primary-foreground text-xs">Resultado</Badge>
-                  <p className="text-xs text-muted-foreground">
-                    Restauração da sustentação, harmonização facial e revitalização
-                  </p>
-                </div>
-              </Card>
-
-              <Card className="p-5 space-y-3">
-                <div className="aspect-[4/3] bg-muted rounded-lg flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Antes do Tratamento</p>
-                </div>
-                <div className="space-y-1">
-                  <Badge variant="secondary" className="text-xs">Caso 2</Badge>
-                  <p className="text-xs text-muted-foreground">
-                    Paciente de 38 anos buscando harmonização e definição facial
-                  </p>
-                </div>
-              </Card>
-
-              <Card className="p-5 space-y-3 ring-2 ring-chart-2/30">
-                <div className="aspect-[4/3] bg-gradient-to-br from-chart-2/20 to-chart-3/20 rounded-lg flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Após Protocolo Dermalift</p>
-                </div>
-                <div className="space-y-1">
-                  <Badge className="bg-chart-2 text-white text-xs">Resultado</Badge>
-                  <p className="text-xs text-muted-foreground">
-                    Proporções equilibradas, contorno definido e pele luminosa
+                <div className="space-y-2">
+                  <Badge className="bg-primary text-primary-foreground text-sm">Resultado</Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Restauração da sustentação, harmonização facial e revitalização da pele
                   </p>
                 </div>
               </Card>
@@ -312,6 +288,44 @@ export default function Presentation() {
     },
     {
       id: 6,
+      component: (
+        <div className="flex flex-col items-center justify-center h-full px-8 py-16 bg-gradient-to-br from-background via-chart-2/5 to-background">
+          <div className="max-w-4xl w-full space-y-6">
+            <h2 className="text-4xl font-bold text-center">Antes & Depois - Caso 2</h2>
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-8 space-y-4">
+                <div className="aspect-[4/3] bg-muted rounded-lg flex items-center justify-center">
+                  <p className="text-base text-muted-foreground">Antes do Tratamento</p>
+                </div>
+                <div className="space-y-2">
+                  <Badge variant="secondary" className="text-sm">Caso 2</Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Paciente de 38 anos buscando harmonização e definição facial
+                  </p>
+                </div>
+              </Card>
+
+              <Card className="p-8 space-y-4 ring-2 ring-chart-2/30">
+                <div className="aspect-[4/3] bg-gradient-to-br from-chart-2/20 to-chart-3/20 rounded-lg flex items-center justify-center">
+                  <p className="text-base text-muted-foreground">Após Protocolo Dermalift</p>
+                </div>
+                <div className="space-y-2">
+                  <Badge className="bg-chart-2 text-white text-sm">Resultado</Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Proporções equilibradas, contorno definido e pele luminosa
+                  </p>
+                </div>
+              </Card>
+            </div>
+            <p className="text-center text-xs text-muted-foreground pt-2">
+              *Resultados individuais podem variar. Fotos meramente ilustrativas.
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 7,
       component: (
         <div className="flex flex-col items-center justify-center h-full px-8 py-16">
           <div className="max-w-4xl space-y-6">
@@ -363,7 +377,7 @@ export default function Presentation() {
       )
     },
     {
-      id: 7,
+      id: 8,
       component: (
         <div className="flex flex-col items-center justify-center h-full px-8 py-16 bg-gradient-to-br from-primary/5 via-background to-chart-3/5">
           <div className="max-w-4xl space-y-6">
@@ -416,7 +430,7 @@ export default function Presentation() {
       )
     },
     {
-      id: 8,
+      id: 9,
       component: (
         <div className="flex flex-col items-center justify-center h-full px-8 py-16 bg-gradient-to-br from-primary/10 via-chart-2/10 to-chart-3/10">
           <div className="max-w-4xl text-center space-y-8">
