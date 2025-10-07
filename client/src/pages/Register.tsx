@@ -63,8 +63,8 @@ export default function Register() {
 
   return (
     <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1">
-        <div className="flex items-center gap-2">
+      <CardHeader className="space-y-3 text-center">
+        <div className="flex items-center justify-center gap-2">
           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
             <UserPlus className="w-5 h-5 text-primary" />
           </div>
