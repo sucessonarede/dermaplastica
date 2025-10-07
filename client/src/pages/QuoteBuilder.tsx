@@ -31,20 +31,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
-type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
-
-interface Procedure {
-  id: number;
-  dbId: string;
-  name: string;
-  price: number;
-  protocol: DermaliftProtocol;
-  description?: string;
-  mlPrice?: number;
-  minMl?: number;
-  maxMl?: number;
-}
+import { type Procedure, type DermaliftProtocol } from "@shared/schema";
 
 interface SelectedItem {
   quantity: number;
@@ -54,11 +41,16 @@ interface SelectedItem {
 export default function QuoteBuilder() {
   const [, setLocation] = useLocation();
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const [selectedItems, setSelectedItems] = useState<Map<number, SelectedItem>>(new Map());
+  const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingPrice, setEditingPrice] = useState<number | null>(null);
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch procedures from API
+  const { data: procedures = [], isLoading: isLoadingProcedures } = useQuery<Procedure[]>({
+    queryKey: ["/api/procedures"],
+  });
 
   // Get loadQuote parameter from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -72,15 +64,15 @@ export default function QuoteBuilder() {
 
   // Populate form when quote is loaded
   useEffect(() => {
-    if (loadedQuote) {
+    if (loadedQuote && procedures.length > 0) {
       // Set the patient
       setSelectedPatient(loadedQuote.patient);
       
       // Set the selected items
-      const itemsMap = new Map<number, SelectedItem>();
+      const itemsMap = new Map<string, SelectedItem>();
       loadedQuote.items.forEach((item: any) => {
-        // Find the procedure by matching the name or dbId
-        const procedure = procedures.find(p => p.name === item.procedure.name);
+        // Find the procedure by matching the name or id
+        const procedure = procedures.find(p => p.id === item.procedure.id || p.name === item.procedure.name);
         if (procedure) {
           itemsMap.set(procedure.id, {
             quantity: parseFloat(item.quantity),
@@ -90,35 +82,13 @@ export default function QuoteBuilder() {
       });
       setSelectedItems(itemsMap);
     }
-  }, [loadedQuote]);
+  }, [loadedQuote, procedures]);
 
   const patients = [
     { id: 1, dbId: "patient-1", name: "Maria Silva", phone: "(11) 98765-4321" },
     { id: 2, dbId: "patient-2", name: "Ana Costa", phone: "(11) 97654-3210" },
     { id: 3, dbId: "patient-3", name: "Juliana Santos", phone: "(11) 96543-2109" },
     { id: 4, dbId: "patient-4", name: "Patricia Oliveira", phone: "(11) 95432-1098" },
-  ];
-
-  const procedures: Procedure[] = [
-    // Sustentação
-    { id: 1, dbId: "proc-1", name: "Fios de Sustentação", price: 3500, protocol: "sustentacao", description: "Lifting facial com fios absorvíveis" },
-    { id: 2, dbId: "proc-2", name: "Ultraformer III", price: 4200, protocol: "sustentacao", description: "HIFU para lifting não invasivo" },
-    { id: 3, dbId: "proc-3", name: "Sculptra", price: 3800, protocol: "sustentacao", description: "Bioestimulador de colágeno" },
-    
-    // Estruturação
-    { id: 4, dbId: "proc-4", name: "Harmonização Facial", price: 4500, protocol: "estruturacao", description: "Equilíbrio das proporções faciais" },
-    { id: 5, dbId: "proc-5", name: "Preenchimento Malar", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "estruturacao", description: "Definição da região das maçãs" },
-    { id: 6, dbId: "proc-6", name: "Rinoplastia Não Cirúrgica", price: 3200, protocol: "estruturacao", description: "Correção do contorno nasal" },
-    
-    // Embelezamento
-    { id: 7, dbId: "proc-7", name: "Preenchimento Labial", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "embelezamento", description: "Volume e definição dos lábios" },
-    { id: 8, dbId: "proc-8", name: "Toxina Botulínica", price: 1200, protocol: "embelezamento", description: "Suavização de rugas dinâmicas" },
-    { id: 9, dbId: "proc-9", name: "Lipo de Papada", price: 5500, protocol: "embelezamento", description: "Redução de gordura localizada" },
-    
-    // Revitalização da Pele
-    { id: 10, dbId: "proc-10", name: "Skinbooster", mlPrice: 600, minMl: 1, maxMl: 4, price: 600, protocol: "revitalizacao", description: "Hidratação profunda da pele" },
-    { id: 11, dbId: "proc-11", name: "Peeling Químico", price: 1200, protocol: "revitalizacao", description: "Renovação celular" },
-    { id: 12, dbId: "proc-12", name: "Laser CO2 Fracionado", price: 3500, protocol: "revitalizacao", description: "Rejuvenescimento facial" },
   ];
 
   const protocolConfig = {
@@ -166,22 +136,24 @@ export default function QuoteBuilder() {
       if (newMap.has(procedure.id)) {
         newMap.delete(procedure.id);
       } else {
+        const mlPrice = procedure.mlPrice ? parseFloat(procedure.mlPrice as string) : null;
+        const minMl = procedure.minMl ? parseFloat(procedure.minMl as string) : 1;
         newMap.set(procedure.id, { 
-          quantity: procedure.mlPrice ? (procedure.minMl || 1) : 1 
+          quantity: mlPrice ? minMl : 1 
         });
       }
       return newMap;
     });
   };
 
-  const updateQuantity = (procedureId: number, delta: number, procedure: Procedure) => {
+  const updateQuantity = (procedureId: string, delta: number, procedure: Procedure) => {
     setSelectedItems((prev) => {
       const newMap = new Map(prev);
       const item = newMap.get(procedureId);
       if (item) {
         const newQuantity = item.quantity + delta;
-        const minMl = procedure.minMl || 1;
-        const maxMl = procedure.maxMl || 10;
+        const minMl = procedure.minMl ? parseFloat(procedure.minMl as string) : 1;
+        const maxMl = procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10;
         
         if (newQuantity >= minMl && newQuantity <= maxMl) {
           newMap.set(procedureId, { ...item, quantity: newQuantity });
@@ -191,7 +163,7 @@ export default function QuoteBuilder() {
     });
   };
 
-  const updateCustomPrice = (procedureId: number, price: string) => {
+  const updateCustomPrice = (procedureId: string, price: string) => {
     const numPrice = parseFloat(price);
     if (!isNaN(numPrice) && numPrice > 0) {
       setSelectedItems((prev) => {
@@ -205,7 +177,7 @@ export default function QuoteBuilder() {
     }
   };
 
-  const removeCustomPrice = (procedureId: number) => {
+  const removeCustomPrice = (procedureId: string) => {
     setSelectedItems((prev) => {
       const newMap = new Map(prev);
       const item = newMap.get(procedureId);
@@ -234,11 +206,12 @@ export default function QuoteBuilder() {
       return item.customPrice;
     }
 
-    if (procedure.mlPrice) {
-      return procedure.mlPrice * item.quantity;
+    const mlPrice = procedure.mlPrice ? parseFloat(procedure.mlPrice as string) : null;
+    if (mlPrice) {
+      return mlPrice * item.quantity;
     }
 
-    return procedure.price;
+    return parseFloat(procedure.price as string);
   };
 
   const total = procedures
@@ -265,7 +238,7 @@ export default function QuoteBuilder() {
         const subtotal = calculateSubtotal(proc);
         
         return {
-          procedureId: proc.dbId,
+          procedureId: proc.id,
           quantity: item.quantity,
           customPrice: item.customPrice,
           subtotal,
@@ -398,13 +371,18 @@ export default function QuoteBuilder() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Grid 2x2 dos Pilares */}
         <div className="lg:col-span-2 grid gap-6 md:grid-cols-2">
-          {(Object.keys(protocolConfig) as DermaliftProtocol[]).map((protocol) => {
-            const config = protocolConfig[protocol];
-            const Icon = config.icon;
-            const protocolProcedures = procedures.filter((p) => p.protocol === protocol);
+          {isLoadingProcedures ? (
+            <div className="col-span-2 text-center py-8 text-muted-foreground">
+              Carregando procedimentos...
+            </div>
+          ) : (
+            (Object.keys(protocolConfig) as DermaliftProtocol[]).map((protocol) => {
+              const config = protocolConfig[protocol];
+              const Icon = config.icon;
+              const protocolProcedures = procedures.filter((p) => p.protocol === protocol);
 
-            return (
-              <Card
+              return (
+                <Card
                 key={protocol}
                 className={`ring-1 ${config.borderColor} hover-elevate`}
                 data-testid={`card-protocol-${protocol}`}
@@ -457,11 +435,11 @@ export default function QuoteBuilder() {
                             <div className="flex flex-col items-end gap-1">
                               {procedure.mlPrice ? (
                                 <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                  R$ {procedure.mlPrice.toLocaleString()} / mL
+                                  R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mL
                                 </span>
                               ) : (
                                 <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                  R$ {procedure.price.toLocaleString()}
+                                  R$ {parseFloat(procedure.price as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               )}
                               {isSelected && !procedure.mlPrice && (
@@ -481,7 +459,7 @@ export default function QuoteBuilder() {
                                     e.stopPropagation();
                                     updateQuantity(procedure.id, -1, procedure);
                                   }}
-                                  disabled={item.quantity <= (procedure.minMl || 1)}
+                                  disabled={item.quantity <= (procedure.minMl ? parseFloat(procedure.minMl as string) : 1)}
                                   data-testid={`button-decrease-${procedure.id}`}
                                 >
                                   <Minus className="h-3 w-3" />
@@ -497,7 +475,7 @@ export default function QuoteBuilder() {
                                     e.stopPropagation();
                                     updateQuantity(procedure.id, 1, procedure);
                                   }}
-                                  disabled={item.quantity >= (procedure.maxMl || 10)}
+                                  disabled={item.quantity >= (procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10)}
                                   data-testid={`button-increase-${procedure.id}`}
                                 >
                                   <Plus className="h-3 w-3" />
@@ -505,7 +483,7 @@ export default function QuoteBuilder() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className={`text-sm font-semibold ${config.textColor}`}>
-                                  R$ {(procedure.mlPrice * item.quantity).toLocaleString()}
+                                  R$ {(parseFloat(procedure.mlPrice as string) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                                 <Button
                                   size="icon"
@@ -544,9 +522,10 @@ export default function QuoteBuilder() {
                     })}
                   </div>
                 </CardContent>
-              </Card>
-            );
-          })}
+                </Card>
+              );
+            })
+          )}
         </div>
 
         {/* Painel de Resumo */}
@@ -586,7 +565,7 @@ export default function QuoteBuilder() {
                                 </Badge>
                                 {procedure.mlPrice && item && (
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {item.quantity} mL × R$ {procedure.mlPrice}
+                                    {item.quantity} mL × R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </p>
                                 )}
                               </div>
