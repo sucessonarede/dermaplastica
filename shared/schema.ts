@@ -46,14 +46,23 @@ export const procedures = pgTable("procedures", {
   category: text("category"),
 });
 
+const optionalPositiveNumber = z
+  .union([z.string(), z.number()])
+  .transform((val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    return val;
+  })
+  .pipe(z.coerce.number().positive())
+  .optional();
+
 export const insertProcedureSchema = createInsertSchema(procedures).omit({
   id: true,
 }).extend({
   protocol: z.enum(dermaliftProtocols),
   price: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()),
-  mlPrice: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()).optional(),
-  minMl: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()).optional(),
-  maxMl: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()).optional(),
+  mlPrice: optionalPositiveNumber,
+  minMl: optionalPositiveNumber,
+  maxMl: optionalPositiveNumber,
 });
 
 export type InsertProcedure = z.infer<typeof insertProcedureSchema>;
