@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import Dashboard from "@/pages/Dashboard";
 import Patients from "@/pages/Patients";
 import QuoteBuilder from "@/pages/QuoteBuilder";
@@ -53,7 +54,10 @@ function App() {
               <div className="flex flex-col flex-1 overflow-hidden">
                 <header className="flex items-center justify-between gap-4 border-b bg-background px-4 py-3">
                   <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <ThemeToggle />
+                  <div className="flex items-center gap-2">
+                    <UserMenu />
+                    <ThemeToggle />
+                  </div>
                 </header>
                 <main className="flex-1 overflow-y-auto p-6">
                   <Router />
