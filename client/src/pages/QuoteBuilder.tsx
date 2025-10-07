@@ -276,18 +276,12 @@ export default function QuoteBuilder() {
   return (
     <div className="space-y-6">
       {/* Título da página */}
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">
-          Protocolo Dermalift
-        </h1>
-        <p className="text-muted-foreground">Monte o tratamento ideal para seu paciente</p>
-      </div>
-
-      {/* Header com seleção de paciente */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-serif text-2xl font-bold">Novo Orçamento</h2>
-          <p className="text-muted-foreground text-sm">Selecione o paciente e monte o protocolo</p>
+          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">
+            Protocolo Dermalift
+          </h1>
+          <p className="text-muted-foreground">Monte o tratamento ideal para seu paciente</p>
         </div>
 
         <Dialog open={patientDialogOpen} onOpenChange={setPatientDialogOpen}>
