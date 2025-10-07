@@ -3,6 +3,9 @@
 ## Recent Changes
 
 ### October 7, 2025
+- **Fixed procedure form validation**: Updated procedure form to only require name, protocol, and price fields. Optional numeric fields (mlPrice, minMl, maxMl) can now be left empty without validation errors. Created custom Zod schema helper that properly handles empty values while still validating positive numbers when values are provided.
+- **Fixed form reset on dialog close**: Procedure form now properly resets all fields to empty values when the dialog is closed. This ensures that after editing a procedure, opening the dialog to add a new one shows completely blank fields.
+- **Replaced mock patient data with real API query**: QuoteBuilder (/protocolo-dermalift) now fetches real patients from the database via /api/patients instead of using hardcoded mock data. Patient selection dialog displays actual patient records with proper type safety using the Patient schema.
 - **Fixed QuoteBuilder to use database procedures**: The Protocolo Dermalift page (/protocolo-dermalift) now fetches procedures from the database API instead of using hardcoded data. This allows clinic administrators to manage procedures through the /procedures page, and those changes will automatically reflect in the QuoteBuilder. The component properly handles decimal-to-string conversion for price fields (price, mlPrice, minMl, maxMl) as returned by Drizzle ORM.
 - **Fixed registration bug**: Corrected user registration flow to properly save the user's name field to the database. The backend route was validating the name but not passing it to the createUser function, causing a database constraint violation (500 error).
 - **Reorganized saved quotes**: Moved the saved quotes listing from /protocolo-dermalift to a dedicated page at /apresentacao. The QuoteBuilder (Protocolo Dermalift) page now focuses only on creating/editing quotes, while /apresentacao displays all saved quotes with options to view presentations, edit, or delete.
