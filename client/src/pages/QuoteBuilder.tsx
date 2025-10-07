@@ -23,14 +23,19 @@ import {
   Check,
   Plus,
   Minus,
-  Edit2
+  Edit2,
+  Save
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
 
 interface Procedure {
   id: number;
+  dbId: string;
   name: string;
   price: number;
   protocol: DermaliftProtocol;
@@ -51,34 +56,35 @@ export default function QuoteBuilder() {
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingPrice, setEditingPrice] = useState<number | null>(null);
+  const { toast } = useToast();
 
   const patients = [
-    { id: 1, name: "Maria Silva", phone: "(11) 98765-4321" },
-    { id: 2, name: "Ana Costa", phone: "(11) 97654-3210" },
-    { id: 3, name: "Juliana Santos", phone: "(11) 96543-2109" },
-    { id: 4, name: "Patricia Oliveira", phone: "(11) 95432-1098" },
+    { id: 1, dbId: "patient-1", name: "Maria Silva", phone: "(11) 98765-4321" },
+    { id: 2, dbId: "patient-2", name: "Ana Costa", phone: "(11) 97654-3210" },
+    { id: 3, dbId: "patient-3", name: "Juliana Santos", phone: "(11) 96543-2109" },
+    { id: 4, dbId: "patient-4", name: "Patricia Oliveira", phone: "(11) 95432-1098" },
   ];
 
   const procedures: Procedure[] = [
     // Sustentação
-    { id: 1, name: "Fios de Sustentação", price: 3500, protocol: "sustentacao", description: "Lifting facial com fios absorvíveis" },
-    { id: 2, name: "Ultraformer III", price: 4200, protocol: "sustentacao", description: "HIFU para lifting não invasivo" },
-    { id: 3, name: "Sculptra", price: 3800, protocol: "sustentacao", description: "Bioestimulador de colágeno" },
+    { id: 1, dbId: "proc-1", name: "Fios de Sustentação", price: 3500, protocol: "sustentacao", description: "Lifting facial com fios absorvíveis" },
+    { id: 2, dbId: "proc-2", name: "Ultraformer III", price: 4200, protocol: "sustentacao", description: "HIFU para lifting não invasivo" },
+    { id: 3, dbId: "proc-3", name: "Sculptra", price: 3800, protocol: "sustentacao", description: "Bioestimulador de colágeno" },
     
     // Estruturação
-    { id: 4, name: "Harmonização Facial", price: 4500, protocol: "estruturacao", description: "Equilíbrio das proporções faciais" },
-    { id: 5, name: "Preenchimento Malar", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "estruturacao", description: "Definição da região das maçãs" },
-    { id: 6, name: "Rinoplastia Não Cirúrgica", price: 3200, protocol: "estruturacao", description: "Correção do contorno nasal" },
+    { id: 4, dbId: "proc-4", name: "Harmonização Facial", price: 4500, protocol: "estruturacao", description: "Equilíbrio das proporções faciais" },
+    { id: 5, dbId: "proc-5", name: "Preenchimento Malar", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "estruturacao", description: "Definição da região das maçãs" },
+    { id: 6, dbId: "proc-6", name: "Rinoplastia Não Cirúrgica", price: 3200, protocol: "estruturacao", description: "Correção do contorno nasal" },
     
     // Embelezamento
-    { id: 7, name: "Preenchimento Labial", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "embelezamento", description: "Volume e definição dos lábios" },
-    { id: 8, name: "Toxina Botulínica", price: 1200, protocol: "embelezamento", description: "Suavização de rugas dinâmicas" },
-    { id: 9, name: "Lipo de Papada", price: 5500, protocol: "embelezamento", description: "Redução de gordura localizada" },
+    { id: 7, dbId: "proc-7", name: "Preenchimento Labial", mlPrice: 800, minMl: 1, maxMl: 5, price: 800, protocol: "embelezamento", description: "Volume e definição dos lábios" },
+    { id: 8, dbId: "proc-8", name: "Toxina Botulínica", price: 1200, protocol: "embelezamento", description: "Suavização de rugas dinâmicas" },
+    { id: 9, dbId: "proc-9", name: "Lipo de Papada", price: 5500, protocol: "embelezamento", description: "Redução de gordura localizada" },
     
     // Revitalização da Pele
-    { id: 10, name: "Skinbooster", mlPrice: 600, minMl: 1, maxMl: 4, price: 600, protocol: "revitalizacao", description: "Hidratação profunda da pele" },
-    { id: 11, name: "Peeling Químico", price: 1200, protocol: "revitalizacao", description: "Renovação celular" },
-    { id: 12, name: "Laser CO2 Fracionado", price: 3500, protocol: "revitalizacao", description: "Rejuvenescimento facial" },
+    { id: 10, dbId: "proc-10", name: "Skinbooster", mlPrice: 600, minMl: 1, maxMl: 4, price: 600, protocol: "revitalizacao", description: "Hidratação profunda da pele" },
+    { id: 11, dbId: "proc-11", name: "Peeling Químico", price: 1200, protocol: "revitalizacao", description: "Renovação celular" },
+    { id: 12, dbId: "proc-12", name: "Laser CO2 Fracionado", price: 3500, protocol: "revitalizacao", description: "Rejuvenescimento facial" },
   ];
 
   const protocolConfig = {
@@ -208,6 +214,60 @@ export default function QuoteBuilder() {
   const selectedProceduresList = procedures.filter((p) =>
     selectedItems.has(p.id)
   );
+
+  // Mutation to save quote
+  const saveQuoteMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedPatient) {
+        throw new Error("Nenhum paciente selecionado");
+      }
+      
+      if (selectedProceduresList.length === 0) {
+        throw new Error("Nenhum procedimento selecionado");
+      }
+
+      const items = selectedProceduresList.map(proc => {
+        const item = selectedItems.get(proc.id)!;
+        const subtotal = calculateSubtotal(proc);
+        
+        return {
+          procedureId: proc.dbId,
+          quantity: item.quantity,
+          customPrice: item.customPrice,
+          subtotal,
+        };
+      });
+
+      const quoteData = {
+        patientId: selectedPatient.dbId,
+        total,
+        discount: 0,
+        status: "pending",
+        notes: null,
+        items,
+      };
+
+      const res = await apiRequest("POST", "/api/quotes", quoteData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Orçamento salvo!",
+        description: "O orçamento foi salvo com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível salvar o orçamento.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveQuote = () => {
+    saveQuoteMutation.mutate();
+  };
 
   return (
     <div className="space-y-6">
@@ -567,6 +627,16 @@ export default function QuoteBuilder() {
 
                     <div className="space-y-2">
                       <Button
+                        className="w-full bg-gradient-to-r from-primary to-chart-2 hover:opacity-90"
+                        disabled={!selectedPatient || selectedProceduresList.length === 0 || saveQuoteMutation.isPending}
+                        onClick={handleSaveQuote}
+                        data-testid="button-save-quote"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {saveQuoteMutation.isPending ? "Salvando..." : "Salvar Orçamento"}
+                      </Button>
+                      <Button
+                        variant="outline"
                         className="w-full"
                         disabled={!selectedPatient || selectedProceduresList.length === 0}
                         data-testid="button-generate-pdf"
