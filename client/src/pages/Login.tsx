@@ -56,8 +56,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-chart-2/5 p-4">
-      <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -121,19 +120,18 @@ export default function Login() {
 
               <div className="text-center text-sm">
                 <span className="text-muted-foreground">Não tem uma conta? </span>
-                <Button
-                  variant="link"
-                  className="p-0 h-auto"
+                <button
+                  type="button"
+                  className="text-primary underline-offset-4 hover:underline p-0 h-auto font-medium"
                   onClick={() => setLocation("/register")}
                   data-testid="link-register"
                 >
                   Cadastre-se
-                </Button>
+                </button>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
-    </div>
   );
 }
