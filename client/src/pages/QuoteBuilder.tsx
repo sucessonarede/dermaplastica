@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import {
   Download
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -59,6 +59,38 @@ export default function QuoteBuilder() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingPrice, setEditingPrice] = useState<number | null>(null);
   const { toast } = useToast();
+
+  // Get loadQuote parameter from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const loadQuoteId = urlParams.get('loadQuote');
+
+  // Load quote data if loadQuote parameter exists
+  const { data: loadedQuote } = useQuery<any>({
+    queryKey: ['/api/quotes', loadQuoteId],
+    enabled: !!loadQuoteId,
+  });
+
+  // Populate form when quote is loaded
+  useEffect(() => {
+    if (loadedQuote) {
+      // Set the patient
+      setSelectedPatient(loadedQuote.patient);
+      
+      // Set the selected items
+      const itemsMap = new Map<number, SelectedItem>();
+      loadedQuote.items.forEach((item: any) => {
+        // Find the procedure by matching the name or dbId
+        const procedure = procedures.find(p => p.name === item.procedure.name);
+        if (procedure) {
+          itemsMap.set(procedure.id, {
+            quantity: parseFloat(item.quantity),
+            customPrice: item.customPrice ? parseFloat(item.customPrice) : undefined,
+          });
+        }
+      });
+      setSelectedItems(itemsMap);
+    }
+  }, [loadedQuote]);
 
   const patients = [
     { id: 1, dbId: "patient-1", name: "Maria Silva", phone: "(11) 98765-4321" },
