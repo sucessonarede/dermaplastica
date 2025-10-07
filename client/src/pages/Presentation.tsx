@@ -1,25 +1,3 @@
-import { useState, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Activity, 
-  Layers, 
-  Sparkles, 
-  Droplets,
-  Shield,
-  Star,
-  Users,
-  ArrowRight,
-  X
-} from "lucide-react";
-import { useLocation } from "wouter";
-import useEmblaCarousel from "embla-carousel-react";
-
-export default function Presentation() {
-  const [, setLocation] = useLocation();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [canScrollPrev, setCanScrollPrev] = useState(false);

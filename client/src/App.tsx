@@ -27,7 +27,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/clinic" component={ClinicSettings} />
       <Route path="/settings" component={ClinicSettings} />
-      <Route path="/apresentacao" component={Presentation} />
+      <Route path="/apresentacao/:quoteId" component={Presentation} />
       <Route component={NotFound} />
     </Switch>
   );
