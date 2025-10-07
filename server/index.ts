@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPg from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -7,9 +8,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Session store configuration
+const PgStore = connectPg(session);
+
 // Session configuration
 app.use(
   session({
+    store: new PgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET || "dermalift-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
@@ -17,6 +25,7 @@ app.use(
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })
 );
