@@ -57,6 +57,7 @@ export interface IStorage {
   // Procedure methods
   getProcedures(): Promise<Procedure[]>;
   createProcedure(procedure: InsertProcedure): Promise<Procedure>;
+  updateProcedure(id: string, procedure: Partial<InsertProcedure>): Promise<Procedure | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -348,6 +349,30 @@ export class MemStorage implements IStorage {
       maxMl: insertProcedure.maxMl?.toString(),
     }).returning();
     return procedure;
+  }
+
+  async updateProcedure(id: string, updateData: Partial<InsertProcedure>): Promise<Procedure | undefined> {
+    const dbData: any = { ...updateData };
+    if (dbData.price !== undefined) {
+      dbData.price = dbData.price.toString();
+    }
+    if (dbData.mlPrice !== undefined) {
+      dbData.mlPrice = dbData.mlPrice.toString();
+    }
+    if (dbData.minMl !== undefined) {
+      dbData.minMl = dbData.minMl.toString();
+    }
+    if (dbData.maxMl !== undefined) {
+      dbData.maxMl = dbData.maxMl.toString();
+    }
+    
+    const [updated] = await db
+      .update(procedures)
+      .set(dbData)
+      .where(eq(procedures.id, id))
+      .returning();
+    
+    return updated;
   }
 }
 

@@ -297,6 +297,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/procedures/:id", async (req: Request, res: Response) => {
+    try {
+      const updateData = insertProcedureSchema.partial().parse(req.body);
+      const procedure = await storage.updateProcedure(req.params.id, updateData);
+      
+      if (!procedure) {
+        res.status(404).json({ error: "Procedimento não encontrado" });
+        return;
+      }
+      
+      res.json(procedure);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error updating procedure:", error);
+        res.status(500).json({ error: "Erro ao atualizar procedimento" });
+      }
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
