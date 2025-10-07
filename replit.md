@@ -1,5 +1,10 @@
 # Dermalift - Aesthetic Clinic Management Platform
 
+## Recent Changes
+
+### October 7, 2025
+- **Fixed registration bug**: Corrected user registration flow to properly save the user's name field to the database. The backend route was validating the name but not passing it to the createUser function, causing a database constraint violation (500 error).
+
 ## Overview
 
 Dermalift is a B2B SaaS platform designed for managing aesthetic clinics. The application provides comprehensive tools for patient management (CRM), dynamic quote generation, procedure tracking, and business intelligence reporting. Built as a full-stack TypeScript application, it uses a modern React frontend with Express backend architecture.
