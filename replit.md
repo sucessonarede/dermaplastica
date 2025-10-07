@@ -84,15 +84,34 @@ Preferred communication style: Simple, everyday language.
 - RESTful endpoints with `/api` prefix
 - Request/response logging middleware
 - Error handling middleware with status code support
-- Session support via connect-pg-simple (configured but not actively used)
+- Session-based authentication with express-session
+  - 7-day cookie expiration
+  - httpOnly and secure cookies in production
+  - SESSION_SECRET environment variable for session encryption
+
+**Authentication System:**
+- Email/password authentication (no third-party providers)
+- Bcrypt for password hashing (salting and hashing)
+- Session-based authentication using express-session
+- Authentication endpoints:
+  - POST /api/auth/register - Create new user account
+  - POST /api/auth/login - Authenticate and create session
+  - GET /api/auth/me - Get current authenticated user
+  - POST /api/auth/logout - Destroy session
+- Frontend pages:
+  - /login - Login form with email/password
+  - /register - Registration form with email, password, confirm password
+  - Both use react-hook-form with Zod validation
+  - Toast notifications for success/error feedback
 
 ### Data Schema
 
 **Core Entities:**
 
 1. **Users** - Authentication and access control
-   - Fields: id, username, password
+   - Fields: id, email (unique), username, password (bcrypt hashed)
    - UUID primary keys
+   - Email-based authentication system
 
 2. **Procedures** - Service catalog with Dermalift Protocol
    - Fields: id, name, description, price, mlPrice, minMl, maxMl, protocol (pgEnum), category
