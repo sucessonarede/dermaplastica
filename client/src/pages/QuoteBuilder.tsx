@@ -31,7 +31,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { type Procedure, type DermaliftProtocol } from "@shared/schema";
+import { type Procedure, type DermaliftProtocol, type Patient } from "@shared/schema";
 
 interface SelectedItem {
   quantity: number;
@@ -40,7 +40,7 @@ interface SelectedItem {
 
 export default function QuoteBuilder() {
   const [, setLocation] = useLocation();
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,6 +50,11 @@ export default function QuoteBuilder() {
   // Fetch procedures from API
   const { data: procedures = [], isLoading: isLoadingProcedures } = useQuery<Procedure[]>({
     queryKey: ["/api/procedures"],
+  });
+
+  // Fetch patients from API
+  const { data: patients = [], isLoading: isLoadingPatients } = useQuery<Patient[]>({
+    queryKey: ["/api/patients"],
   });
 
   // Get loadQuote parameter from URL
@@ -83,13 +88,6 @@ export default function QuoteBuilder() {
       setSelectedItems(itemsMap);
     }
   }, [loadedQuote, procedures]);
-
-  const patients = [
-    { id: 1, dbId: "patient-1", name: "Maria Silva", phone: "(11) 98765-4321" },
-    { id: 2, dbId: "patient-2", name: "Ana Costa", phone: "(11) 97654-3210" },
-    { id: 3, dbId: "patient-3", name: "Juliana Santos", phone: "(11) 96543-2109" },
-    { id: 4, dbId: "patient-4", name: "Patricia Oliveira", phone: "(11) 95432-1098" },
-  ];
 
   const protocolConfig = {
     sustentacao: {
@@ -246,7 +244,7 @@ export default function QuoteBuilder() {
       });
 
       const quoteData = {
-        patientId: selectedPatient.dbId,
+        patientId: selectedPatient.id,
         total,
         discount: 0,
         status: "pending",
