@@ -2,8 +2,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Users, Calculator, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  
+  if (hour >= 5 && hour < 12) {
+    return "Bom dia";
+  } else if (hour >= 12 && hour < 18) {
+    return "Boa tarde";
+  } else {
+    return "Boa noite";
+  }
+}
 
 export default function Dashboard() {
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/auth/me"],
+  });
   const stats = [
     {
       title: "Pacientes Ativos",
@@ -44,7 +61,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-gradient-to-r from-[hsl(275,100%,26%)] via-[hsl(340,74%,62%)] to-[hsl(17,100%,61%)] p-8 text-primary-foreground hover-elevate">
-        <h1 className="font-serif text-3xl font-bold">Dashboard</h1>
+        <h1 className="font-serif text-3xl font-bold">
+          {getGreeting()}, {user?.name || "Usuário"}!
+        </h1>
         <p className="text-primary-foreground/90">Visão geral da sua clínica</p>
       </div>
 
