@@ -135,7 +135,7 @@ export default function Presentation() {
             <div className="inline-flex items-center gap-3 mb-2">
               <Sparkles className="w-10 h-10 text-primary" />
               <h1 className="text-6xl font-bold bg-gradient-to-r from-primary via-chart-2 to-chart-3 bg-clip-text text-transparent">
-                Dermalift
+                Dermalift da {quote.patient.name}
               </h1>
             </div>
             <p className="text-2xl text-muted-foreground font-light">
