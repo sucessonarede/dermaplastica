@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import type { User as UserType } from "@shared/schema";
 
 export function UserMenu() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<UserType>({
     queryKey: ["/api/auth/me"],
   });
 
