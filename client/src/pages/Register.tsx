@@ -12,6 +12,7 @@ import { useLocation } from "wouter";
 import { UserPlus } from "lucide-react";
 
 const registerSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
   confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
@@ -29,6 +30,7 @@ export default function Register() {
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -77,6 +79,25 @@ export default function Register() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="text"
+                      placeholder="Seu nome completo"
+                      data-testid="input-name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="email"
