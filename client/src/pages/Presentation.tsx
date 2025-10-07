@@ -459,7 +459,7 @@ export default function Presentation() {
   ];
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-hidden">
+    <div className="fixed top-0 left-0 w-screen h-screen bg-background z-50 overflow-hidden m-0 p-0">
       <Button
         variant="ghost"
         size="icon"
