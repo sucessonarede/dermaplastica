@@ -58,9 +58,20 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function FullscreenLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RequireAuth>
+      <div className="h-screen w-full">
+        {children}
+      </div>
+    </RequireAuth>
+  );
+}
+
 function Router() {
   const [location] = useLocation();
   const isPublicRoute = location === "/login" || location === "/register";
+  const isPresentationRoute = location.startsWith("/apresentacao/");
 
   if (isPublicRoute) {
     return (
@@ -70,6 +81,16 @@ function Router() {
           <Route path="/register" component={Register} />
         </Switch>
       </PublicLayout>
+    );
+  }
+
+  if (isPresentationRoute) {
+    return (
+      <FullscreenLayout>
+        <Switch>
+          <Route path="/apresentacao/:quoteId" component={Presentation} />
+        </Switch>
+      </FullscreenLayout>
     );
   }
 
@@ -85,7 +106,6 @@ function Router() {
         <Route path="/clinic" component={ClinicSettings} />
         <Route path="/settings" component={ClinicSettings} />
         <Route path="/apresentacao" component={SavedQuotes} />
-        <Route path="/apresentacao/:quoteId" component={Presentation} />
         <Route component={NotFound} />
       </Switch>
     </ProtectedLayout>
