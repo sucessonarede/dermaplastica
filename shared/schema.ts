@@ -47,22 +47,26 @@ export const procedures = pgTable("procedures", {
 });
 
 const optionalPositiveNumber = z
-  .union([z.string(), z.number(), z.undefined(), z.null()])
+  .union([z.string(), z.number()])
+  .optional()
+  .nullable()
   .transform((val) => {
     if (val === "" || val === null || val === undefined) return undefined;
     const num = typeof val === 'string' ? parseFloat(val) : val;
-    return isNaN(num as number) ? undefined : num;
+    if (isNaN(num as number)) {
+      throw new Error("Deve ser um número válido");
+    }
+    return num;
   })
   .refine((val) => val === undefined || (typeof val === 'number' && val > 0), {
-    message: "Number must be greater than 0",
-  })
-  .optional();
+    message: "Número deve ser maior que 0",
+  });
 
 export const insertProcedureSchema = createInsertSchema(procedures).omit({
   id: true,
 }).extend({
   protocol: z.enum(dermaliftProtocols),
-  price: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()),
+  price: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive("Preço deve ser maior que 0")),
   mlPrice: optionalPositiveNumber,
   minMl: optionalPositiveNumber,
   maxMl: optionalPositiveNumber,

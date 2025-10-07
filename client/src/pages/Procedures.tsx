@@ -37,7 +37,7 @@ export default function Procedures() {
     defaultValues: {
       name: "",
       description: "",
-      price: 0,
+      price: "" as any,
       mlPrice: undefined,
       minMl: undefined,
       maxMl: undefined,
@@ -123,7 +123,7 @@ export default function Procedures() {
       form.reset({
         name: "",
         description: "",
-        price: 0,
+        price: "" as any,
         mlPrice: undefined,
         minMl: undefined,
         maxMl: undefined,
