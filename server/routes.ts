@@ -223,6 +223,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard endpoints
+  app.get("/api/dashboard/stats", async (req: Request, res: Response) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get("/api/dashboard/recent-quotes", async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const recentQuotes = await storage.getRecentQuotes(limit);
+      res.json(recentQuotes);
+    } catch (error) {
+      console.error("Error fetching recent quotes:", error);
+      res.status(500).json({ error: "Failed to fetch recent quotes" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
