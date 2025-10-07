@@ -16,6 +16,7 @@ import Procedures from "@/pages/Procedures";
 import Reports from "@/pages/Reports";
 import ClinicSettings from "@/pages/ClinicSettings";
 import Presentation from "@/pages/Presentation";
+import SavedQuotes from "@/pages/SavedQuotes";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import NotFound from "@/pages/not-found";
@@ -83,6 +84,7 @@ function Router() {
         <Route path="/reports" component={Reports} />
         <Route path="/clinic" component={ClinicSettings} />
         <Route path="/settings" component={ClinicSettings} />
+        <Route path="/apresentacao" component={SavedQuotes} />
         <Route path="/apresentacao/:quoteId" component={Presentation} />
         <Route component={NotFound} />
       </Switch>
