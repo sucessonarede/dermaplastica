@@ -109,14 +109,9 @@ export default function SavedQuotes() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl bg-gradient-to-r from-[hsl(275,100%,26%)] via-[hsl(340,74%,62%)] to-[hsl(17,100%,61%)] p-8 text-primary-foreground hover-elevate">
-        <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8" />
-          <div>
-            <h1 className="font-serif text-3xl font-bold">Orçamentos Salvos</h1>
-            <p className="text-primary-foreground/90">Gerencie e visualize seus orçamentos</p>
-          </div>
-        </div>
+      <div>
+        <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Orçamentos Salvos</h1>
+        <p className="text-muted-foreground">Gerencie e visualize seus orçamentos</p>
       </div>
 
       {isLoadingSavedQuotes ? (
