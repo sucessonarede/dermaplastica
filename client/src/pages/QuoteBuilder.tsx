@@ -23,7 +23,9 @@ import {
   Plus,
   Minus,
   Edit2,
-  Save
+  Save,
+  FileText,
+  Download
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMutation } from "@tanstack/react-query";
