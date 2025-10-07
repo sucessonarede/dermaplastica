@@ -120,7 +120,16 @@ export default function Procedures() {
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setEditingProcedure(null);
-      form.reset();
+      form.reset({
+        name: "",
+        description: "",
+        price: 0,
+        mlPrice: undefined,
+        minMl: undefined,
+        maxMl: undefined,
+        protocol: undefined,
+        category: "",
+      });
     }
     setDialogOpen(open);
   };

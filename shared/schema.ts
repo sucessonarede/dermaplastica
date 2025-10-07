@@ -47,12 +47,15 @@ export const procedures = pgTable("procedures", {
 });
 
 const optionalPositiveNumber = z
-  .union([z.string(), z.number()])
+  .union([z.string(), z.number(), z.undefined(), z.null()])
   .transform((val) => {
     if (val === "" || val === null || val === undefined) return undefined;
-    return val;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return isNaN(num as number) ? undefined : num;
   })
-  .pipe(z.coerce.number().positive())
+  .refine((val) => val === undefined || (typeof val === 'number' && val > 0), {
+    message: "Number must be greater than 0",
+  })
   .optional();
 
 export const insertProcedureSchema = createInsertSchema(procedures).omit({
