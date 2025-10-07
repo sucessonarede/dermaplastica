@@ -27,9 +27,11 @@ import {
   Save
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { Presentation } from "lucide-react";
 
 type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
 
@@ -50,6 +52,36 @@ interface SelectedItem {
   customPrice?: number;
 }
 
+interface SavedQuote {
+  id: string;
+  patientId: string;
+  total: string;
+  discount?: string;
+  status: string;
+  createdAt: string;
+  notes?: string | null;
+  patient: {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  items: Array<{
+    id: string;
+    quoteId: string;
+    procedureId: string;
+    quantity: string;
+    customPrice?: string;
+    subtotal: string;
+    procedure: {
+      id: string;
+      name: string;
+      price: string;
+      protocol: DermaliftProtocol;
+    };
+  }>;
+}
+
 export default function QuoteBuilder() {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [selectedItems, setSelectedItems] = useState<Map<number, SelectedItem>>(new Map());
@@ -57,6 +89,11 @@ export default function QuoteBuilder() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingPrice, setEditingPrice] = useState<number | null>(null);
   const { toast } = useToast();
+
+  // Query para buscar orçamentos salvos
+  const { data: savedQuotes, isLoading: isLoadingSavedQuotes } = useQuery<SavedQuote[]>({
+    queryKey: ["/api/quotes"],
+  });
 
   const patients = [
     { id: 1, dbId: "patient-1", name: "Maria Silva", phone: "(11) 98765-4321" },
@@ -255,6 +292,8 @@ export default function QuoteBuilder() {
         title: "Orçamento salvo!",
         description: "O orçamento foi salvo com sucesso.",
       });
+      // Invalidar cache para recarregar lista
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
     },
     onError: (error: Error) => {
       toast({
@@ -269,15 +308,157 @@ export default function QuoteBuilder() {
     saveQuoteMutation.mutate();
   };
 
+  const handleLoadQuote = (quote: SavedQuote) => {
+    // Carregar paciente
+    const patient = patients.find(p => p.dbId === quote.patientId);
+    if (patient) {
+      setSelectedPatient(patient);
+    }
+
+    // Carregar itens selecionados
+    const newSelectedItems = new Map<number, SelectedItem>();
+    quote.items.forEach(item => {
+      const procedure = procedures.find(p => p.dbId === item.procedureId);
+      if (procedure) {
+        newSelectedItems.set(procedure.id, {
+          quantity: parseFloat(item.quantity),
+          customPrice: item.customPrice ? parseFloat(item.customPrice) : undefined,
+        });
+      }
+    });
+    setSelectedItems(newSelectedItems);
+
+    toast({
+      title: "Orçamento carregado!",
+      description: `Orçamento de ${quote.patient.name} foi carregado.`,
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      pending: "Pendente",
+      accepted: "Aceito",
+      rejected: "Rejeitado",
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
+    const variantMap: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+      pending: "secondary",
+      accepted: "default",
+      rejected: "destructive",
+    };
+    return variantMap[status] || "outline";
+  };
+
   return (
     <div className="space-y-6">
+      {/* Título da página */}
+      <div>
+        <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">
+          Protocolo Dermalift
+        </h1>
+        <p className="text-muted-foreground">Monte o tratamento ideal para seu paciente</p>
+      </div>
+
+      {/* Orçamentos Salvos */}
+      {savedQuotes && savedQuotes.length > 0 && (
+        <Card data-testid="card-saved-quotes">
+          <CardHeader>
+            <CardTitle className="text-xl">Orçamentos Salvos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingSavedQuotes ? (
+              <div className="text-center text-muted-foreground py-8">Carregando...</div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {savedQuotes.map((quote) => (
+                  <Card key={quote.id} className="hover-elevate" data-testid={`card-quote-${quote.id}`}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                              {quote.patient.name.split(" ").map(n => n[0]).join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm" data-testid={`text-patient-name-${quote.id}`}>
+                              {quote.patient.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground" data-testid={`text-date-${quote.id}`}>
+                              {formatDate(quote.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={getStatusVariant(quote.status)} data-testid={`badge-status-${quote.id}`}>
+                          {getStatusLabel(quote.status)}
+                        </Badge>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Total</span>
+                          <span className="font-semibold text-primary" data-testid={`text-total-${quote.id}`}>
+                            R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Procedimentos</span>
+                          <span className="text-xs" data-testid={`text-items-count-${quote.id}`}>
+                            {quote.items.length} {quote.items.length === 1 ? 'item' : 'itens'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1"
+                          data-testid={`button-generate-presentation-${quote.id}`}
+                        >
+                          <Presentation className="h-3 w-3 mr-1" />
+                          Apresentação
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleLoadQuote(quote)}
+                          data-testid={`button-load-quote-${quote.id}`}
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Editar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Separator />
+
       {/* Header com seleção de paciente */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">
-            Protocolo Dermalift
-          </h1>
-          <p className="text-muted-foreground">Monte o tratamento ideal para seu paciente</p>
+          <h2 className="font-serif text-2xl font-bold">Novo Orçamento</h2>
+          <p className="text-muted-foreground text-sm">Selecione o paciente e monte o protocolo</p>
         </div>
 
         <Dialog open={patientDialogOpen} onOpenChange={setPatientDialogOpen}>
