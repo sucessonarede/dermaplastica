@@ -303,22 +303,41 @@ export default function Presentation() {
     {
       id: 5,
       component: (
-        <div className="flex flex-col items-center justify-center h-full px-8 py-20 bg-gradient-to-br from-background via-primary/5 to-chart-2/5">
-          <div className="max-w-4xl space-y-8 text-center">
-            <h2 className="text-4xl font-bold mb-4">Resultados que Falam</h2>
-            <p className="text-xl text-muted-foreground">
-              Milhares de pacientes já transformaram sua autoestima com o Protocolo Dermalift
+        <div className="flex flex-col items-center justify-center h-full px-8 py-20">
+          <div className="max-w-6xl space-y-8">
+            <h2 className="text-4xl font-bold text-center mb-8">Antes & Depois</h2>
+            <p className="text-xl text-muted-foreground text-center mb-12">
+              Veja a transformação real de nossos pacientes
             </p>
-            <div className="grid grid-cols-3 gap-8 mt-8">
-              <div className="space-y-2">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card className="overflow-hidden">
+                <div className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                  <p className="text-muted-foreground text-center px-4">
+                    Espaço para foto Antes & Depois 1
+                  </p>
+                </div>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <div className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                  <p className="text-muted-foreground text-center px-4">
+                    Espaço para foto Antes & Depois 2
+                  </p>
+                </div>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t">
+              <div className="text-center space-y-2">
                 <div className="text-5xl font-bold text-primary">98%</div>
                 <p className="text-sm text-muted-foreground">Satisfação</p>
               </div>
-              <div className="space-y-2">
+              <div className="text-center space-y-2">
                 <div className="text-5xl font-bold text-chart-2">5000+</div>
                 <p className="text-sm text-muted-foreground">Pacientes</p>
               </div>
-              <div className="space-y-2">
+              <div className="text-center space-y-2">
                 <div className="text-5xl font-bold text-chart-3">15</div>
                 <p className="text-sm text-muted-foreground">Anos de Expertise</p>
               </div>
@@ -434,7 +453,7 @@ export default function Presentation() {
       component: (
         <div className="flex flex-col items-center justify-center h-full px-8 py-20 bg-gradient-to-br from-primary/10 via-background to-chart-2/10">
           <div className="max-w-4xl text-center space-y-8">
-            <h2 className="text-5xl font-bold mb-4">Pronto para Transformar sua Beleza?</h2>
+            <h2 className="text-5xl font-bold mb-4">Vamos montar seu plano?</h2>
             <p className="text-xl text-muted-foreground mb-8">
               Comece sua jornada com o Protocolo Dermalift hoje mesmo
             </p>
@@ -445,7 +464,7 @@ export default function Presentation() {
                 onClick={goToQuoteBuilder}
                 data-testid="button-start-protocol"
               >
-                Iniciar meu Protocolo
+                Montar meu Orçamento
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
