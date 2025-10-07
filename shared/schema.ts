@@ -5,16 +5,26 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
+  username: text("username"),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
+  email: true,
   password: true,
+}).extend({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+});
+
+export const loginUserSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(1, "Senha é obrigatória"),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 
 export const dermaliftProtocolEnum = pgEnum("dermalift_protocol", ["sustentacao", "estruturacao", "embelezamento", "revitalizacao"]);

@@ -1,8 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema } from "@shared/schema";
 import { z } from "zod";
+import bcrypt from "bcrypt";
 
 // Schema for creating a quote with items
 const createQuoteBodySchema = z.object({
@@ -21,6 +22,112 @@ const createQuoteBodySchema = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // prefix all routes with /api
+
+  // Authentication routes
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    try {
+      const body = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(body.email);
+      if (existingUser) {
+        res.status(400).json({ error: "Email já cadastrado" });
+        return;
+      }
+      
+      // Hash password
+      const hashedPassword = await bcrypt.hash(body.password, 10);
+      
+      // Create user
+      const user = await storage.createUser({
+        email: body.email,
+        password: hashedPassword,
+      });
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error registering user:", error);
+        res.status(500).json({ error: "Erro ao criar usuário" });
+      }
+    }
+  });
+
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const body = loginUserSchema.parse(req.body);
+      
+      // Find user
+      const user = await storage.getUserByEmail(body.email);
+      if (!user) {
+        res.status(401).json({ error: "Email ou senha incorretos" });
+        return;
+      }
+      
+      // Check password
+      const isValidPassword = await bcrypt.compare(body.password, user.password);
+      if (!isValidPassword) {
+        res.status(401).json({ error: "Email ou senha incorretos" });
+        return;
+      }
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error logging in:", error);
+        res.status(500).json({ error: "Erro ao fazer login" });
+      }
+    }
+  });
+
+  app.get("/api/auth/me", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        res.status(401).json({ error: "Usuário não encontrado" });
+        return;
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error getting user:", error);
+      res.status(500).json({ error: "Erro ao buscar usuário" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req: Request, res: Response) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Error logging out:", err);
+        res.status(500).json({ error: "Erro ao fazer logout" });
+      } else {
+        res.status(204).send();
+      }
+    });
+  });
 
   // Create a quote with items
   app.post("/api/quotes", async (req: Request, res: Response) => {
