@@ -5,43 +5,78 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Phone, Mail, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertPatientSchema, type InsertPatient, type Patient } from "@shared/schema";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const patients = [
-    {
-      id: 1,
-      name: "Maria Silva",
-      phone: "(11) 98765-4321",
-      email: "maria@email.com",
-      origin: "Instagram",
-      tags: ["VIP", "Retorno"],
-      city: "São Paulo",
+  const { data: patients = [], isLoading } = useQuery<Patient[]>({
+    queryKey: ["/api/patients"],
+  });
+
+  const form = useForm<InsertPatient>({
+    resolver: zodResolver(insertPatientSchema),
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      cpf: "",
+      birthDate: "",
+      address: "",
+      city: "",
+      state: "",
+      origin: "",
+      tags: [],
     },
-    {
-      id: 2,
-      name: "Ana Costa",
-      phone: "(11) 97654-3210",
-      email: "ana@email.com",
-      origin: "Indicação",
-      tags: ["Novo"],
-      city: "São Paulo",
+  });
+
+  const createPatientMutation = useMutation({
+    mutationFn: async (data: InsertPatient) => {
+      const res = await apiRequest("POST", "/api/patients", data);
+      return await res.json();
     },
-    {
-      id: 3,
-      name: "Juliana Santos",
-      phone: "(11) 96543-2109",
-      email: "juliana@email.com",
-      origin: "Google",
-      tags: ["Retorno"],
-      city: "Campinas",
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      toast({
+        title: "Paciente criado!",
+        description: "O paciente foi adicionado com sucesso.",
+      });
+      form.reset();
+      setDialogOpen(false);
     },
-  ];
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar paciente",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: InsertPatient) => {
+    createPatientMutation.mutate(data);
+  };
 
   const filteredPatients = patients.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Carregando pacientes...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -50,10 +85,112 @@ export default function Patients() {
           <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Pacientes</h1>
           <p className="text-muted-foreground">Gerencie seus pacientes e leads</p>
         </div>
-        <Button data-testid="button-add-patient">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Paciente
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-patient">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Paciente
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Paciente</DialogTitle>
+              <DialogDescription>
+                Preencha os dados do novo paciente. Campos obrigatórios estão marcados com *.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome completo" data-testid="input-patient-name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(11) 99999-9999" data-testid="input-patient-phone" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="email@exemplo.com" data-testid="input-patient-email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="São Paulo" data-testid="input-patient-city" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="origin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Origem</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Instagram, Google, etc." data-testid="input-patient-origin" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                    data-testid="button-cancel-patient"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createPatientMutation.isPending}
+                    data-testid="button-save-patient"
+                  >
+                    {createPatientMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="relative">
@@ -68,50 +205,67 @@ export default function Patients() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPatients.map((patient, index) => (
-          <Card key={patient.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20" data-testid={`card-patient-${patient.id}`}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <Avatar>
-                  <AvatarFallback className={`${
-                    index % 3 === 0 ? "bg-[hsl(var(--primary))]" :
-                    index % 3 === 1 ? "bg-[hsl(var(--chart-2))]" :
-                    "bg-[hsl(var(--chart-3))]"
-                  } text-primary-foreground`}>
-                    {patient.name.split(" ").map(n => n[0]).join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-2">
-                  <h3 className="font-semibold text-foreground">{patient.name}</h3>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      {patient.phone}
+        {filteredPatients.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <p className="text-muted-foreground">Nenhum paciente encontrado.</p>
+            <p className="text-sm text-muted-foreground mt-1">Adicione um paciente para começar.</p>
+          </div>
+        ) : (
+          filteredPatients.map((patient, index) => (
+            <Card key={patient.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20" data-testid={`card-patient-${patient.id}`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Avatar>
+                    <AvatarFallback className={`${
+                      index % 3 === 0 ? "bg-[hsl(var(--primary))]" :
+                      index % 3 === 1 ? "bg-[hsl(var(--chart-2))]" :
+                      "bg-[hsl(var(--chart-3))]"
+                    } text-primary-foreground`}>
+                      {patient.name.split(" ").map(n => n[0]).join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <h3 className="font-semibold text-foreground">{patient.name}</h3>
+                    <div className="space-y-1">
+                      {patient.phone && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3" />
+                          {patient.phone}
+                        </div>
+                      )}
+                      {patient.email && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="h-3 w-3" />
+                          {patient.email}
+                        </div>
+                      )}
+                      {patient.city && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          {patient.city}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      {patient.email}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {patient.city}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1 pt-2">
-                    <Badge className="text-xs bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
-                      {patient.origin}
-                    </Badge>
-                    {patient.tags.map((tag) => (
-                      <Badge key={tag} className="text-xs bg-[hsl(var(--chart-3))]/15 text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3))]/30">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {(patient.origin || (patient.tags && patient.tags.length > 0)) && (
+                      <div className="flex flex-wrap gap-1 pt-2">
+                        {patient.origin && (
+                          <Badge className="text-xs bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
+                            {patient.origin}
+                          </Badge>
+                        )}
+                        {patient.tags && patient.tags.map((tag) => (
+                          <Badge key={tag} className="text-xs bg-[hsl(var(--chart-3))]/15 text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3))]/30">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

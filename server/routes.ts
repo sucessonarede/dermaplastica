@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 
@@ -242,6 +242,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching recent quotes:", error);
       res.status(500).json({ error: "Failed to fetch recent quotes" });
+    }
+  });
+
+  // Patient routes
+  app.get("/api/patients", async (req: Request, res: Response) => {
+    try {
+      const patients = await storage.getPatients();
+      res.json(patients);
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      res.status(500).json({ error: "Erro ao buscar pacientes" });
+    }
+  });
+
+  app.post("/api/patients", async (req: Request, res: Response) => {
+    try {
+      const body = insertPatientSchema.parse(req.body);
+      const patient = await storage.createPatient(body);
+      res.status(201).json(patient);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error creating patient:", error);
+        res.status(500).json({ error: "Erro ao criar paciente" });
+      }
     }
   });
 

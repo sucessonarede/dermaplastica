@@ -75,6 +75,10 @@ export const patients = pgTable("patients", {
 
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
+}).extend({
+  name: z.string().min(1, "Nome é obrigatório"),
+  phone: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
 export type InsertPatient = z.infer<typeof insertPatientSchema>;

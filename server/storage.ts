@@ -48,6 +48,10 @@ export interface IStorage {
   // Dashboard methods
   getDashboardStats(): Promise<DashboardStats>;
   getRecentQuotes(limit?: number): Promise<QuoteWithDetails[]>;
+  
+  // Patient methods
+  getPatients(): Promise<Patient[]>;
+  createPatient(patient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient>;
 }
 
 export class MemStorage implements IStorage {
@@ -315,6 +319,15 @@ export class MemStorage implements IStorage {
       patient: q.patients!,
       items: itemsByQuote.get(q.quotes.id) || []
     }));
+  }
+
+  async getPatients(): Promise<Patient[]> {
+    return await db.select().from(patients).orderBy(patients.name);
+  }
+
+  async createPatient(insertPatient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient> {
+    const [patient] = await db.insert(patients).values(insertPatient).returning();
+    return patient;
   }
 }
 
