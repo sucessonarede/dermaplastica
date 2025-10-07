@@ -4,6 +4,8 @@
 
 ### October 7, 2025
 - **Fixed registration bug**: Corrected user registration flow to properly save the user's name field to the database. The backend route was validating the name but not passing it to the createUser function, causing a database constraint violation (500 error).
+- **Reorganized saved quotes**: Moved the saved quotes listing from /protocolo-dermalift to a dedicated page at /apresentacao. The QuoteBuilder (Protocolo Dermalift) page now focuses only on creating/editing quotes, while /apresentacao displays all saved quotes with options to view presentations, edit, or delete.
+- **Added personalized dashboard greeting**: Dashboard now displays a time-based greeting (Bom dia/Boa tarde/Boa noite) with the user's name.
 
 ## Overview
 
