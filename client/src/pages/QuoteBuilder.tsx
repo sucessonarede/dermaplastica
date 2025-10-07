@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 import { 
   Dialog,
   DialogContent,
@@ -83,6 +84,7 @@ interface SavedQuote {
 }
 
 export default function QuoteBuilder() {
+  const [, setLocation] = useLocation();
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [selectedItems, setSelectedItems] = useState<Map<number, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
@@ -428,6 +430,7 @@ export default function QuoteBuilder() {
                           variant="default"
                           size="sm"
                           className="flex-1"
+                          onClick={() => setLocation(`/apresentacao/${quote.id}`)}
                           data-testid={`button-generate-presentation-${quote.id}`}
                         >
                           <Presentation className="h-3 w-3 mr-1" />

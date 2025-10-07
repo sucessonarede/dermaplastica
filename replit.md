@@ -54,11 +54,14 @@ Preferred communication style: Simple, everyday language.
 - Clean, professional design for in-clinic patient presentations
 
 **Presentation Module:**
+- Dynamic presentation route: `/apresentacao/:quoteId` loads saved quote data
 - Fullscreen presentation mode with 8 slides introducing Dermalift methodology
 - Embla Carousel for smooth slide transitions
 - Navigation via keyboard (arrows/ESC), mouse (next/prev buttons), and slide dots
-- Slides cover: Cover, Concept, 4 Pillars, Why It Works, Before/After, Personalized Plan, Safety/Experience, Call-to-Action
-- Final slide redirects to Quote Builder (/protocolo-dermalift) to begin protocol creation
+- Slides cover: Cover, Concept, 4 Pillars, Why It Works, Before/After, Personalized Plan (with patient data), Safety/Experience, Call-to-Action
+- **Personalized Plan slide**: Displays patient name, selected procedures with quantities, subtotals, and total investment from saved quote
+- Final slide redirects to Quote Builder (/protocolo-dermalift)
+- "Gerar Apresentação" button in saved quotes list navigates to presentation with quote data
 
 ### Backend Architecture
 
