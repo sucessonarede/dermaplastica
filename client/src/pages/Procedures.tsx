@@ -25,6 +25,7 @@ const protocolLabels: Record<string, string> = {
 export default function Procedures() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(null);
   const { toast } = useToast();
 
   const { data: procedures = [], isLoading } = useQuery<Procedure[]>({
@@ -58,6 +59,7 @@ export default function Procedures() {
       });
       form.reset();
       setDialogOpen(false);
+      setEditingProcedure(null);
     },
     onError: (error: Error) => {
       toast({
@@ -68,8 +70,59 @@ export default function Procedures() {
     },
   });
 
+  const updateProcedureMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertProcedure> }) => {
+      const res = await apiRequest("PUT", `/api/procedures/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/procedures"] });
+      toast({
+        title: "Procedimento atualizado!",
+        description: "O procedimento foi atualizado com sucesso.",
+      });
+      form.reset();
+      setDialogOpen(false);
+      setEditingProcedure(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar procedimento",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertProcedure) => {
-    createProcedureMutation.mutate(data);
+    if (editingProcedure) {
+      updateProcedureMutation.mutate({ id: editingProcedure.id, data });
+    } else {
+      createProcedureMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (procedure: Procedure) => {
+    setEditingProcedure(procedure);
+    form.reset({
+      name: procedure.name,
+      description: procedure.description || "",
+      price: Number(procedure.price),
+      mlPrice: procedure.mlPrice ? Number(procedure.mlPrice) : undefined,
+      minMl: procedure.minMl ? Number(procedure.minMl) : undefined,
+      maxMl: procedure.maxMl ? Number(procedure.maxMl) : undefined,
+      protocol: procedure.protocol,
+      category: procedure.category || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setEditingProcedure(null);
+      form.reset();
+    }
+    setDialogOpen(open);
   };
 
   const filteredProcedures = procedures.filter((p) =>
@@ -91,7 +144,7 @@ export default function Procedures() {
           <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Procedimentos</h1>
           <p className="text-muted-foreground">Gerencie procedimentos, pacotes e materiais</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-procedure">
               <Plus className="h-4 w-4 mr-2" />
@@ -100,9 +153,9 @@ export default function Procedures() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Adicionar Novo Procedimento</DialogTitle>
+              <DialogTitle>{editingProcedure ? "Editar Procedimento" : "Adicionar Novo Procedimento"}</DialogTitle>
               <DialogDescription>
-                Preencha os dados do novo procedimento. Campos obrigatórios estão marcados com *.
+                Preencha os dados do procedimento. Campos obrigatórios estão marcados com *.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -232,17 +285,19 @@ export default function Procedures() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setDialogOpen(false)}
+                    onClick={() => handleOpenChange(false)}
                     data-testid="button-cancel-procedure"
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createProcedureMutation.isPending}
+                    disabled={createProcedureMutation.isPending || updateProcedureMutation.isPending}
                     data-testid="button-save-procedure"
                   >
-                    {createProcedureMutation.isPending ? "Salvando..." : "Salvar"}
+                    {(createProcedureMutation.isPending || updateProcedureMutation.isPending) 
+                      ? "Salvando..." 
+                      : editingProcedure ? "Atualizar" : "Salvar"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -288,7 +343,12 @@ export default function Procedures() {
                     {protocolLabels[procedure.protocol]}
                   </Badge>
                 </div>
-                <Button size="icon" variant="ghost" data-testid={`button-edit-procedure-${procedure.id}`}>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => handleEdit(procedure)}
+                  data-testid={`button-edit-procedure-${procedure.id}`}
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
               </CardHeader>
