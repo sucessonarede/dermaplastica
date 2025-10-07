@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 
@@ -267,6 +267,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         console.error("Error creating patient:", error);
         res.status(500).json({ error: "Erro ao criar paciente" });
+      }
+    }
+  });
+
+  // Procedure routes
+  app.get("/api/procedures", async (req: Request, res: Response) => {
+    try {
+      const procedures = await storage.getProcedures();
+      res.json(procedures);
+    } catch (error) {
+      console.error("Error fetching procedures:", error);
+      res.status(500).json({ error: "Erro ao buscar procedimentos" });
+    }
+  });
+
+  app.post("/api/procedures", async (req: Request, res: Response) => {
+    try {
+      const body = insertProcedureSchema.parse(req.body);
+      const procedure = await storage.createProcedure(body);
+      res.status(201).json(procedure);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error creating procedure:", error);
+        res.status(500).json({ error: "Erro ao criar procedimento" });
       }
     }
   });

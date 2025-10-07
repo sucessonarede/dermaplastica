@@ -4,48 +4,85 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Edit, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertProcedureSchema, type InsertProcedure, type Procedure, dermaliftProtocols } from "@shared/schema";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+const protocolLabels: Record<string, string> = {
+  sustentacao: "Sustentação",
+  estruturacao: "Estruturação",
+  embelezamento: "Embelezamento",
+  revitalizacao: "Revitalização"
+};
 
 export default function Procedures() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const procedures = [
-    {
-      id: 1,
-      name: "Harmonização Facial",
-      category: "Facial",
-      price: 4500,
-      duration: "90 min",
-      materials: ["Ácido Hialurônico", "Toxina Botulínica"],
+  const { data: procedures = [], isLoading } = useQuery<Procedure[]>({
+    queryKey: ["/api/procedures"],
+  });
+
+  const form = useForm<InsertProcedure>({
+    resolver: zodResolver(insertProcedureSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      price: 0,
+      mlPrice: undefined,
+      minMl: undefined,
+      maxMl: undefined,
+      protocol: undefined,
+      category: "",
     },
-    {
-      id: 2,
-      name: "Toxina Botulínica",
-      category: "Facial",
-      price: 1200,
-      duration: "30 min",
-      materials: ["Toxina Botulínica"],
+  });
+
+  const createProcedureMutation = useMutation({
+    mutationFn: async (data: InsertProcedure) => {
+      const res = await apiRequest("POST", "/api/procedures", data);
+      return await res.json();
     },
-    {
-      id: 3,
-      name: "Preenchimento Labial",
-      category: "Facial",
-      price: 2800,
-      duration: "60 min",
-      materials: ["Ácido Hialurônico"],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/procedures"] });
+      toast({
+        title: "Procedimento criado!",
+        description: "O procedimento foi adicionado com sucesso.",
+      });
+      form.reset();
+      setDialogOpen(false);
     },
-    {
-      id: 4,
-      name: "Bioestimulador de Colágeno",
-      category: "Corporal",
-      price: 3200,
-      duration: "45 min",
-      materials: ["Bioestimulador"],
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar procedimento",
+        description: error.message,
+        variant: "destructive",
+      });
     },
-  ];
+  });
+
+  const onSubmit = (data: InsertProcedure) => {
+    createProcedureMutation.mutate(data);
+  };
 
   const filteredProcedures = procedures.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Carregando procedimentos...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -54,10 +91,164 @@ export default function Procedures() {
           <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Procedimentos</h1>
           <p className="text-muted-foreground">Gerencie procedimentos, pacotes e materiais</p>
         </div>
-        <Button data-testid="button-add-procedure">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Procedimento
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-procedure">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Procedimento
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Procedimento</DialogTitle>
+              <DialogDescription>
+                Preencha os dados do novo procedimento. Campos obrigatórios estão marcados com *.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do procedimento" data-testid="input-procedure-name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descrição do procedimento" data-testid="input-procedure-description" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="protocol"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Protocolo Dermalift *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-procedure-protocol">
+                              <SelectValue placeholder="Selecione o protocolo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {dermaliftProtocols.map((protocol) => (
+                              <SelectItem key={protocol} value={protocol}>
+                                {protocolLabels[protocol]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoria</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Facial, Corporal" data-testid="input-procedure-category" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preço Base (R$) *</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-price" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="mlPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preço por mL (R$)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-ml-price" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="minMl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>mL Mínimo</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.1" placeholder="0.0" data-testid="input-procedure-min-ml" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="maxMl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>mL Máximo</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.1" placeholder="0.0" data-testid="input-procedure-max-ml" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                    data-testid="button-cancel-procedure"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createProcedureMutation.isPending}
+                    data-testid="button-save-procedure"
+                  >
+                    {createProcedureMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="relative">
@@ -72,52 +263,67 @@ export default function Procedures() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProcedures.map((procedure, index) => (
-          <Card key={procedure.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-3))]/20" data-testid={`card-procedure-${procedure.id}`}>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-              <div className="flex items-center gap-2">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${
-                  index % 3 === 0 ? "bg-[hsl(var(--primary))]/10" :
-                  index % 3 === 1 ? "bg-[hsl(var(--chart-2))]/10" :
-                  "bg-[hsl(var(--chart-3))]/10"
-                }`}>
-                  <Package className={`h-4 w-4 ${
-                    index % 3 === 0 ? "text-[hsl(var(--primary))]" :
-                    index % 3 === 1 ? "text-[hsl(var(--chart-2))]" :
-                    "text-[hsl(var(--chart-3))]"
-                  }`} />
+        {filteredProcedures.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <p className="text-muted-foreground">Nenhum procedimento encontrado.</p>
+            <p className="text-sm text-muted-foreground mt-1">Adicione um procedimento para começar.</p>
+          </div>
+        ) : (
+          filteredProcedures.map((procedure, index) => (
+            <Card key={procedure.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-3))]/20" data-testid={`card-procedure-${procedure.id}`}>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-md ${
+                    index % 3 === 0 ? "bg-[hsl(var(--primary))]/10" :
+                    index % 3 === 1 ? "bg-[hsl(var(--chart-2))]/10" :
+                    "bg-[hsl(var(--chart-3))]/10"
+                  }`}>
+                    <Package className={`h-4 w-4 ${
+                      index % 3 === 0 ? "text-[hsl(var(--primary))]" :
+                      index % 3 === 1 ? "text-[hsl(var(--chart-2))]" :
+                      "text-[hsl(var(--chart-3))]"
+                    }`} />
+                  </div>
+                  <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
+                    {protocolLabels[procedure.protocol]}
+                  </Badge>
                 </div>
-                <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">{procedure.category}</Badge>
-              </div>
-              <Button size="icon" variant="ghost" data-testid={`button-edit-procedure-${procedure.id}`}>
-                <Edit className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-semibold text-foreground">{procedure.name}</h3>
-                <p className="text-sm text-muted-foreground">{procedure.duration}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Materiais</p>
-                <div className="flex flex-wrap gap-1">
-                  {procedure.materials.map((material) => (
-                    <Badge key={material} variant="outline" className="text-xs">
-                      {material}
-                    </Badge>
-                  ))}
+                <Button size="icon" variant="ghost" data-testid={`button-edit-procedure-${procedure.id}`}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <h3 className="font-semibold text-foreground">{procedure.name}</h3>
+                  {procedure.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{procedure.description}</p>
+                  )}
+                  {procedure.category && (
+                    <p className="text-sm text-muted-foreground mt-1">{procedure.category}</p>
+                  )}
                 </div>
-              </div>
+                
+                {procedure.mlPrice && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Preço por mL</p>
+                    <p className="text-sm font-medium">R$ {Number(procedure.mlPrice).toFixed(2)}/mL</p>
+                    {procedure.minMl && procedure.maxMl && (
+                      <p className="text-xs text-muted-foreground">
+                        {Number(procedure.minMl).toFixed(1)} - {Number(procedure.maxMl).toFixed(1)} mL
+                      </p>
+                    )}
+                  </div>
+                )}
 
-              <div className="pt-2 border-t">
-                <p className="text-2xl font-bold text-primary">
-                  R$ {procedure.price.toLocaleString()}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="pt-2 border-t">
+                  <p className="text-2xl font-bold text-primary">
+                    R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

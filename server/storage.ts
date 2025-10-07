@@ -6,7 +6,8 @@ import {
   type QuoteItem,
   type InsertQuoteItem,
   type Patient,
-  type Procedure
+  type Procedure,
+  type InsertProcedure
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -52,6 +53,10 @@ export interface IStorage {
   // Patient methods
   getPatients(): Promise<Patient[]>;
   createPatient(patient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient>;
+  
+  // Procedure methods
+  getProcedures(): Promise<Procedure[]>;
+  createProcedure(procedure: InsertProcedure): Promise<Procedure>;
 }
 
 export class MemStorage implements IStorage {
@@ -328,6 +333,21 @@ export class MemStorage implements IStorage {
   async createPatient(insertPatient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient> {
     const [patient] = await db.insert(patients).values(insertPatient).returning();
     return patient;
+  }
+
+  async getProcedures(): Promise<Procedure[]> {
+    return await db.select().from(procedures).orderBy(procedures.name);
+  }
+
+  async createProcedure(insertProcedure: InsertProcedure): Promise<Procedure> {
+    const [procedure] = await db.insert(procedures).values({
+      ...insertProcedure,
+      price: insertProcedure.price.toString(),
+      mlPrice: insertProcedure.mlPrice?.toString(),
+      minMl: insertProcedure.minMl?.toString(),
+      maxMl: insertProcedure.maxMl?.toString(),
+    }).returning();
+    return procedure;
   }
 }
 
