@@ -39,10 +39,8 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
   constructor() {
-    this.users = new Map();
+    // All operations now use the database
   }
 
   async getUser(id: string): Promise<User | undefined> {

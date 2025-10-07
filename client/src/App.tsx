@@ -14,11 +14,15 @@ import Procedures from "@/pages/Procedures";
 import Reports from "@/pages/Reports";
 import ClinicSettings from "@/pages/ClinicSettings";
 import Presentation from "@/pages/Presentation";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/" component={Dashboard} />
       <Route path="/patients" component={Patients} />
       <Route path="/protocolo-dermalift" component={QuoteBuilder} />
