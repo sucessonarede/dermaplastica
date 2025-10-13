@@ -150,10 +150,13 @@ export default function QuoteBuilder() {
       const item = newMap.get(procedureId);
       if (item) {
         const newQuantity = item.quantity + delta;
-        const minMl = procedure.minMl ? parseFloat(procedure.minMl as string) : 1;
-        const maxMl = procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10;
         
-        if (newQuantity >= minMl && newQuantity <= maxMl) {
+        // For mlPrice procedures, use minMl/maxMl constraints
+        // For regular procedures, allow 1-99
+        const minQty = procedure.mlPrice ? (procedure.minMl ? parseFloat(procedure.minMl as string) : 1) : 1;
+        const maxQty = procedure.mlPrice ? (procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10) : 99;
+        
+        if (newQuantity >= minQty && newQuantity <= maxQty) {
           newMap.set(procedureId, { ...item, quantity: newQuantity });
         }
       }
@@ -209,7 +212,8 @@ export default function QuoteBuilder() {
       return mlPrice * item.quantity;
     }
 
-    return parseFloat(procedure.price as string);
+    // Multiply base price by quantity for non-mlPrice procedures
+    return parseFloat(procedure.price as string) * item.quantity;
   };
 
   const total = procedures
@@ -498,20 +502,56 @@ export default function QuoteBuilder() {
                               </div>
                             )}
                             
-                            {isSelected && !procedure.mlPrice && (
-                              <div className="flex justify-end mt-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleProcedure(procedure);
-                                  }}
-                                  data-testid={`button-remove-${procedure.id}`}
-                                >
-                                  Remover
-                                </Button>
+                            {isSelected && !procedure.mlPrice && item && (
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateQuantity(procedure.id, -1, procedure);
+                                    }}
+                                    disabled={item.quantity <= 1}
+                                    data-testid={`button-decrease-${procedure.id}`}
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className={`text-sm font-medium min-w-[3rem] text-center ${config.textColor}`}>
+                                    {item.quantity}x
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateQuantity(procedure.id, 1, procedure);
+                                    }}
+                                    disabled={item.quantity >= 99}
+                                    data-testid={`button-increase-${procedure.id}`}
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-sm font-semibold ${config.textColor}`}>
+                                    R$ {(parseFloat(procedure.price as string) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleProcedure(procedure);
+                                    }}
+                                    data-testid={`button-remove-${procedure.id}`}
+                                  >
+                                    <Check className={`h-4 w-4 ${config.textColor}`} />
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -557,9 +597,17 @@ export default function QuoteBuilder() {
                                 <Badge className={`text-xs mt-1 ${config.bgColor} ${config.textColor} border-0`}>
                                   {config.title}
                                 </Badge>
-                                {procedure.mlPrice && item && (
+                                {item && (
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {item.quantity} mL × R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {procedure.mlPrice ? (
+                                      <>
+                                        {item.quantity} mL × R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {item.quantity}x × R$ {parseFloat(procedure.price as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </>
+                                    )}
                                   </p>
                                 )}
                               </div>
