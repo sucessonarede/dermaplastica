@@ -12,7 +12,7 @@ import {
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { users, quotes, quoteItems, patients, procedures } from "@shared/schema";
-import { eq, and, gte, sql, desc, count } from "drizzle-orm";
+import { eq, and, gte, sql, desc, count, inArray } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -304,7 +304,7 @@ export class MemStorage implements IStorage {
       .select()
       .from(quoteItems)
       .leftJoin(procedures, eq(quoteItems.procedureId, procedures.id))
-      .where(sql`${quoteItems.quoteId} = ANY(${quoteIds})`);
+      .where(inArray(quoteItems.quoteId, quoteIds));
 
     // Group items by quote
     const itemsByQuote = new Map<string, Array<QuoteItem & { procedure: Procedure }>>();

@@ -347,9 +347,20 @@ export default function Procedures() {
                 </div>
 
                 <div className="pt-2 border-t">
-                  <p className="text-2xl font-bold text-primary">
-                    R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+                  {procedure.discountedPrice ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground line-through">
+                        R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-500">
+                        R$ {Number(procedure.discountedPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold text-primary">
+                      R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
