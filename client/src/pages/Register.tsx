@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { UserPlus } from "lucide-react";
@@ -44,6 +44,7 @@ export default function Register() {
       return await res.json();
     },
     onSuccess: () => {
+      queryClient.clear();
       toast({
         title: "Cadastro realizado!",
         description: "Sua conta foi criada com sucesso.",
