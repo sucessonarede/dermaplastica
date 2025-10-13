@@ -353,7 +353,7 @@ export default function Presentation() {
         <div className="flex flex-col items-center justify-center h-full px-8 py-20">
           <div className="max-w-4xl space-y-8">
             <h2 className="text-4xl font-bold text-center mb-6">
-              Seu Plano Personalizado: {quote.patient.name}
+              Seu plano, {quote.patient.name}
             </h2>
             <Card className="p-8 space-y-6">
               <div className="space-y-4">
