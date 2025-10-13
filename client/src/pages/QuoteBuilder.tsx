@@ -287,13 +287,15 @@ export default function QuoteBuilder() {
       const res = await apiRequest("POST", "/api/quotes", quoteData);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Orçamento salvo!",
-        description: "O orçamento foi salvo com sucesso.",
+        description: "Abrindo apresentação...",
       });
       // Invalidar cache para recarregar lista
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      // Navegar para apresentação
+      setLocation(`/apresentacao/${data.id}`);
     },
     onError: (error: Error) => {
       toast({
@@ -461,24 +463,13 @@ export default function QuoteBuilder() {
                                   </p>
                                 )}
                               </div>
-                              <div className="flex flex-col items-end gap-1">
-                                {procedure.mlPrice ? (
-                                  <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                    R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mL
-                                  </span>
-                                ) : (
-                                  <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                    R$ {parseFloat(procedure.price as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
-                                )}
-                                {isSelected && !procedure.mlPrice && (
-                                  <Check className={`h-4 w-4 ${config.textColor}`} />
-                                )}
-                              </div>
+                              {isSelected && (
+                                <Check className={`h-4 w-4 ${config.textColor}`} />
+                              )}
                             </div>
                             
                             {isSelected && procedure.mlPrice && item && (
-                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                              <div className="flex items-center justify-center mt-3 pt-3 border-t border-border/50">
                                 <div className="flex items-center gap-2">
                                   <Button
                                     size="icon"
@@ -510,28 +501,11 @@ export default function QuoteBuilder() {
                                     <Plus className="h-3 w-3" />
                                   </Button>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-sm font-semibold ${config.textColor}`}>
-                                    R$ {(parseFloat(procedure.mlPrice as string) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleProcedure(procedure);
-                                    }}
-                                    data-testid={`button-remove-${procedure.id}`}
-                                  >
-                                    <Check className={`h-4 w-4 ${config.textColor}`} />
-                                  </Button>
-                                </div>
                               </div>
                             )}
                             
                             {isSelected && !procedure.mlPrice && item && (
-                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                              <div className="flex items-center justify-center mt-3 pt-3 border-t border-border/50">
                                 <div className="flex items-center gap-2">
                                   <Button
                                     size="icon"
@@ -561,23 +535,6 @@ export default function QuoteBuilder() {
                                     data-testid={`button-increase-${procedure.id}`}
                                   >
                                     <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-sm font-semibold ${config.textColor}`}>
-                                    R$ {(parseFloat(procedure.price as string) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleProcedure(procedure);
-                                    }}
-                                    data-testid={`button-remove-${procedure.id}`}
-                                  >
-                                    <Check className={`h-4 w-4 ${config.textColor}`} />
                                   </Button>
                                 </div>
                               </div>
@@ -611,8 +568,6 @@ export default function QuoteBuilder() {
                       {selectedProceduresList.map((procedure) => {
                         const config = protocolConfig[procedure.protocol];
                         const item = selectedItems.get(procedure.id);
-                        const subtotal = calculateSubtotal(procedure);
-                        const hasCustomPrice = item?.customPrice !== undefined;
                         
                         return (
                           <div
@@ -628,77 +583,17 @@ export default function QuoteBuilder() {
                                 {item && (
                                   <p className="text-xs text-muted-foreground mt-1">
                                     {procedure.mlPrice ? (
-                                      <>
-                                        {item.quantity} mL × R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </>
+                                      <>{item.quantity} mL</>
                                     ) : (
-                                      <>
-                                        {item.quantity}x × R$ {parseFloat(procedure.price as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </>
+                                      <>{item.quantity}x</>
                                     )}
                                   </p>
                                 )}
                               </div>
-                              {editingPrice === procedure.id ? (
-                                <div className="flex items-center gap-1">
-                                  <Input
-                                    type="number"
-                                    className="h-7 w-20 text-xs"
-                                    defaultValue={item?.customPrice || subtotal}
-                                    onBlur={(e) => {
-                                      const value = e.target.value;
-                                      if (value) {
-                                        updateCustomPrice(procedure.id, value);
-                                      }
-                                      setEditingPrice(null);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        const value = (e.target as HTMLInputElement).value;
-                                        if (value) {
-                                          updateCustomPrice(procedure.id, value);
-                                        }
-                                        setEditingPrice(null);
-                                      }
-                                    }}
-                                    autoFocus
-                                    data-testid={`input-price-${procedure.id}`}
-                                  />
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <span className="font-semibold text-foreground text-sm whitespace-nowrap">
-                                    R$ {subtotal.toLocaleString()}
-                                  </span>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-6 w-6"
-                                    onClick={() => setEditingPrice(procedure.id)}
-                                    data-testid={`button-edit-price-${procedure.id}`}
-                                  >
-                                    <Edit2 className={`h-3 w-3 ${hasCustomPrice ? 'text-primary' : ''}`} />
-                                  </Button>
-                                </div>
-                              )}
                             </div>
-                            {hasCustomPrice && (
-                              <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                                <span className="text-xs text-muted-foreground">Preço customizado</span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 text-xs"
-                                  onClick={() => removeCustomPrice(procedure.id)}
-                                  data-testid={`button-reset-price-${procedure.id}`}
-                                >
-                                  Restaurar original
-                                </Button>
-                              </div>
-                            )}
                             
                             {/* Note section */}
-                            <div className={`${hasCustomPrice || item?.note ? 'pt-2 border-t border-border/50' : 'pt-2'}`}>
+                            <div className={`${item?.note ? 'pt-2 border-t border-border/50' : 'pt-2'}`}>
                               {editingNote === procedure.id ? (
                                 <div className="space-y-2">
                                   <Input
@@ -772,13 +667,6 @@ export default function QuoteBuilder() {
                   </div>
 
                   <div className="border-t pt-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-lg font-semibold text-foreground">Total</span>
-                      <span className="text-2xl font-bold text-primary" data-testid="text-total-amount">
-                        R$ {total.toLocaleString()}
-                      </span>
-                    </div>
-
                     <div className="space-y-2">
                       <Button
                         className="w-full bg-gradient-to-r from-primary to-chart-2 hover:opacity-90"
@@ -787,7 +675,7 @@ export default function QuoteBuilder() {
                         data-testid="button-save-quote"
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        {saveQuoteMutation.isPending ? "Salvando..." : "Salvar Orçamento"}
+                        {saveQuoteMutation.isPending ? "Salvando..." : "Salvar e Apresentar"}
                       </Button>
                       <Button
                         variant="outline"
