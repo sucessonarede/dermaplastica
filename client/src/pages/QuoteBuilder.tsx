@@ -452,7 +452,7 @@ export default function QuoteBuilder() {
                           >
                             <div 
                               className="flex items-start justify-between gap-2 cursor-pointer"
-                              onClick={() => !isSelected && toggleProcedure(procedure)}
+                              onClick={() => toggleProcedure(procedure)}
                             >
                               <div className="flex-1">
                                 <p className={`font-medium ${isSelected ? config.textColor : "text-foreground"}`}>
