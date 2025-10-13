@@ -365,170 +365,166 @@ export default function QuoteBuilder() {
         </Card>
       )}
 
-      {/* Grid dos 4 Pilares + Painel de Resumo */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Grid 2x2 dos Pilares */}
-        <div className="lg:col-span-2 grid gap-6 md:grid-cols-2">
-          {isLoadingProcedures ? (
-            <div className="col-span-2 text-center py-8 text-muted-foreground">
-              Carregando procedimentos...
-            </div>
-          ) : (
-            (Object.keys(protocolConfig) as DermaliftProtocol[]).map((protocol) => {
+      {/* Linha Horizontal: 4 Pilares + Painel de Resumo */}
+      <div className="flex gap-6 overflow-x-auto pb-4">
+        {isLoadingProcedures ? (
+          <div className="w-full text-center py-8 text-muted-foreground">
+            Carregando procedimentos...
+          </div>
+        ) : (
+          <>
+            {(Object.keys(protocolConfig) as DermaliftProtocol[]).map((protocol) => {
               const config = protocolConfig[protocol];
               const Icon = config.icon;
               const protocolProcedures = procedures.filter((p) => p.protocol === protocol);
 
               return (
                 <Card
-                key={protocol}
-                className={`ring-1 ${config.borderColor} hover-elevate`}
-                data-testid={`card-protocol-${protocol}`}
-              >
-                <CardHeader className={`${config.bgColor} rounded-t-xl`}>
-                  <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-md ${config.bgColor} ring-1 ${config.borderColor}`}>
-                      <Icon className={`h-5 w-5 ${config.textColor}`} />
+                  key={protocol}
+                  className={`ring-1 ${config.borderColor} hover-elevate flex-shrink-0 w-[380px]`}
+                  data-testid={`card-protocol-${protocol}`}
+                >
+                  <CardHeader className={`${config.bgColor} rounded-t-xl`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-md ${config.bgColor} ring-1 ${config.borderColor}`}>
+                        <Icon className={`h-5 w-5 ${config.textColor}`} />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className={`text-lg ${config.textColor}`}>
+                          {config.title}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {config.description}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <CardTitle className={`text-lg ${config.textColor}`}>
-                        {config.title}
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {config.description}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-2">
-                    {protocolProcedures.map((procedure) => {
-                      const isSelected = selectedItems.has(procedure.id);
-                      const item = selectedItems.get(procedure.id);
-                      
-                      return (
-                        <div
-                          key={procedure.id}
-                          className={`p-3 rounded-md border transition-all ${
-                            isSelected
-                              ? `${config.bgColor} ${config.borderColor} ring-2`
-                              : "border-border hover-elevate"
-                          }`}
-                          data-testid={`procedure-${procedure.id}`}
-                        >
-                          <div 
-                            className="flex items-start justify-between gap-2 cursor-pointer"
-                            onClick={() => !isSelected && toggleProcedure(procedure)}
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="space-y-2">
+                      {protocolProcedures.map((procedure) => {
+                        const isSelected = selectedItems.has(procedure.id);
+                        const item = selectedItems.get(procedure.id);
+                        
+                        return (
+                          <div
+                            key={procedure.id}
+                            className={`p-3 rounded-md border transition-all ${
+                              isSelected
+                                ? `${config.bgColor} ${config.borderColor} ring-2`
+                                : "border-border hover-elevate"
+                            }`}
+                            data-testid={`procedure-${procedure.id}`}
                           >
-                            <div className="flex-1">
-                              <p className={`font-medium ${isSelected ? config.textColor : "text-foreground"}`}>
-                                {procedure.name}
-                              </p>
-                              {procedure.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {procedure.description}
+                            <div 
+                              className="flex items-start justify-between gap-2 cursor-pointer"
+                              onClick={() => !isSelected && toggleProcedure(procedure)}
+                            >
+                              <div className="flex-1">
+                                <p className={`font-medium ${isSelected ? config.textColor : "text-foreground"}`}>
+                                  {procedure.name}
                                 </p>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              {procedure.mlPrice ? (
-                                <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                  R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mL
-                                </span>
-                              ) : (
-                                <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
-                                  R$ {parseFloat(procedure.price as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
-                              )}
-                              {isSelected && !procedure.mlPrice && (
-                                <Check className={`h-4 w-4 ${config.textColor}`} />
-                              )}
-                            </div>
-                          </div>
-                          
-                          {isSelected && procedure.mlPrice && item && (
-                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  className="h-7 w-7"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateQuantity(procedure.id, -1, procedure);
-                                  }}
-                                  disabled={item.quantity <= (procedure.minMl ? parseFloat(procedure.minMl as string) : 1)}
-                                  data-testid={`button-decrease-${procedure.id}`}
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className={`text-sm font-medium min-w-[3rem] text-center ${config.textColor}`}>
-                                  {item.quantity} mL
-                                </span>
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  className="h-7 w-7"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateQuantity(procedure.id, 1, procedure);
-                                  }}
-                                  disabled={item.quantity >= (procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10)}
-                                  data-testid={`button-increase-${procedure.id}`}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
+                                {procedure.description && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {procedure.description}
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-sm font-semibold ${config.textColor}`}>
-                                  R$ {(parseFloat(procedure.mlPrice as string) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
+                              <div className="flex flex-col items-end gap-1">
+                                {procedure.mlPrice ? (
+                                  <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
+                                    R$ {parseFloat(procedure.mlPrice as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mL
+                                  </span>
+                                ) : (
+                                  <span className={`text-sm font-semibold ${isSelected ? config.textColor : "text-foreground"}`}>
+                                    R$ {parseFloat(procedure.price as string).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                )}
+                                {isSelected && !procedure.mlPrice && (
+                                  <Check className={`h-4 w-4 ${config.textColor}`} />
+                                )}
+                              </div>
+                            </div>
+                            
+                            {isSelected && procedure.mlPrice && item && (
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateQuantity(procedure.id, -1, procedure);
+                                    }}
+                                    disabled={item.quantity <= (procedure.minMl ? parseFloat(procedure.minMl as string) : 1)}
+                                    data-testid={`button-decrease-${procedure.id}`}
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className={`text-sm font-medium min-w-[3rem] text-center ${config.textColor}`}>
+                                    {item.quantity} mL
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateQuantity(procedure.id, 1, procedure);
+                                    }}
+                                    disabled={item.quantity >= (procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10)}
+                                    data-testid={`button-increase-${procedure.id}`}
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-sm font-semibold ${config.textColor}`}>
+                                    R$ {(parseFloat(procedure.mlPrice as string) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleProcedure(procedure);
+                                    }}
+                                    data-testid={`button-remove-${procedure.id}`}
+                                  >
+                                    <Check className={`h-4 w-4 ${config.textColor}`} />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {isSelected && !procedure.mlPrice && (
+                              <div className="flex justify-end mt-2">
                                 <Button
-                                  size="icon"
+                                  size="sm"
                                   variant="ghost"
-                                  className="h-7 w-7"
+                                  className="h-7"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleProcedure(procedure);
                                   }}
                                   data-testid={`button-remove-${procedure.id}`}
                                 >
-                                  <Check className={`h-4 w-4 ${config.textColor}`} />
+                                  Remover
                                 </Button>
                               </div>
-                            </div>
-                          )}
-                          
-                          {isSelected && !procedure.mlPrice && (
-                            <div className="flex justify-end mt-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleProcedure(procedure);
-                                }}
-                                data-testid={`button-remove-${procedure.id}`}
-                              >
-                                Remover
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
                 </Card>
               );
-            })
-          )}
-        </div>
+            })}
 
-        {/* Painel de Resumo */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-6 ring-1 ring-[hsl(var(--chart-3))]/20">
+            {/* Painel de Resumo */}
+            <Card className="ring-1 ring-[hsl(var(--chart-3))]/20 flex-shrink-0 w-[380px]">
             <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-3))]/5 to-transparent">
               <CardTitle className="text-[hsl(var(--primary))]">Resumo do Protocolo</CardTitle>
             </CardHeader>
@@ -672,7 +668,8 @@ export default function QuoteBuilder() {
               )}
             </CardContent>
           </Card>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
