@@ -42,6 +42,7 @@ interface SavedQuote {
     quantity: string;
     customPrice?: string;
     subtotal: string;
+    note?: string;
     procedure: {
       id: string;
       name: string;
@@ -357,30 +358,35 @@ export default function Presentation() {
             <Card className="p-8 space-y-6">
               <div className="space-y-4">
                 {quote.items.map((item, index) => {
-                  const protocolColors = {
-                    sustentacao: "primary",
-                    estruturacao: "chart-2", 
-                    embelezamento: "chart-3",
-                    revitalizacao: "chart-4",
+                  const protocolStyles = {
+                    sustentacao: "bg-primary/10",
+                    estruturacao: "bg-[hsl(var(--chart-2))]/10", 
+                    embelezamento: "bg-[hsl(var(--chart-3))]/10",
+                    revitalizacao: "bg-[hsl(var(--chart-4))]/10",
                   };
-                  const color = protocolColors[item.procedure.protocol];
+                  const badgeStyle = protocolStyles[item.procedure.protocol];
                   
                   return (
                     <div key={item.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full bg-${color}/10 flex items-center justify-center`}>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className={`w-8 h-8 rounded-full ${badgeStyle} flex items-center justify-center flex-shrink-0`}>
                           <span className="text-sm font-bold">{index + 1}</span>
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{item.procedure.name}</p>
                           {parseFloat(item.quantity) > 1 && (
                             <p className="text-xs text-muted-foreground">
                               {parseFloat(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} ml
                             </p>
                           )}
+                          {item.note && (
+                            <p className="text-sm text-muted-foreground italic mt-1">
+                              {item.note}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <p className="font-semibold text-lg">
+                      <p className="font-semibold text-lg flex-shrink-0 ml-4">
                         R$ {parseFloat(item.subtotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
