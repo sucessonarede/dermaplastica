@@ -133,11 +133,24 @@ export default function SavedQuotes() {
 
   const hasActiveFilters = searchTerm.trim() !== "" || startDate !== "" || endDate !== "";
 
+  // Calculate total sum of filtered quotes
+  const totalSum = filteredQuotes.reduce((sum, quote) => sum + parseFloat(quote.total), 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Orçamentos Salvos</h1>
-        <p className="text-muted-foreground">Gerencie e visualize seus orçamentos</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Orçamentos Salvos</h1>
+          <p className="text-muted-foreground">Gerencie e visualize seus orçamentos</p>
+        </div>
+        {filteredQuotes.length > 0 && (
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-2xl font-bold text-primary" data-testid="text-total-sum">
+              R$ {totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Filters Section */}
