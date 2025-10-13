@@ -146,7 +146,7 @@ export default function SavedQuotes() {
         {filteredQuotes.length > 0 && (
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-2xl font-bold text-primary" data-testid="text-total-sum">
+            <p className="text-2xl font-bold" style={{ color: '#F66756' }} data-testid="text-total-sum">
               R$ {totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
