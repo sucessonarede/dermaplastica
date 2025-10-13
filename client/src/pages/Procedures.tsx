@@ -234,62 +234,19 @@ export default function Procedures() {
                     )}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preço Base (R$) *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-price" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="mlPrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preço por mL (R$)</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-ml-price" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="minMl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>mL Mínimo</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.1" placeholder="0.0" data-testid="input-procedure-min-ml" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="maxMl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>mL Máximo</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.1" placeholder="0.0" data-testid="input-procedure-max-ml" {...field} value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preço Base (Unid/mL) *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-price" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <Button
                     type="button"
@@ -371,18 +328,6 @@ export default function Procedures() {
                     <p className="text-sm text-muted-foreground mt-1">{procedure.category}</p>
                   )}
                 </div>
-                
-                {procedure.mlPrice && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Preço por mL</p>
-                    <p className="text-sm font-medium">R$ {Number(procedure.mlPrice).toFixed(2)}/mL</p>
-                    {procedure.minMl && procedure.maxMl && (
-                      <p className="text-xs text-muted-foreground">
-                        {Number(procedure.minMl).toFixed(1)} - {Number(procedure.maxMl).toFixed(1)} mL
-                      </p>
-                    )}
-                  </div>
-                )}
 
                 <div className="pt-2 border-t">
                   <p className="text-2xl font-bold text-primary">

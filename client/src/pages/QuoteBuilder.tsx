@@ -139,9 +139,8 @@ export default function QuoteBuilder() {
         newMap.delete(procedure.id);
       } else {
         const mlPrice = procedure.mlPrice ? parseFloat(procedure.mlPrice as string) : null;
-        const minMl = procedure.minMl ? parseFloat(procedure.minMl as string) : 1;
         newMap.set(procedure.id, { 
-          quantity: mlPrice ? minMl : 1 
+          quantity: mlPrice ? 1 : 1 
         });
       }
       return newMap;
@@ -155,10 +154,10 @@ export default function QuoteBuilder() {
       if (item) {
         const newQuantity = item.quantity + delta;
         
-        // For mlPrice procedures, use minMl/maxMl constraints
-        // For regular procedures, allow 1-99
-        const minQty = procedure.mlPrice ? (procedure.minMl ? parseFloat(procedure.minMl as string) : 1) : 1;
-        const maxQty = procedure.mlPrice ? (procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10) : 99;
+        // For mlPrice procedures, allow 1-10 mL
+        // For regular procedures, allow 1-99 units
+        const minQty = 1;
+        const maxQty = procedure.mlPrice ? 10 : 99;
         
         if (newQuantity >= minQty && newQuantity <= maxQty) {
           newMap.set(procedureId, { ...item, quantity: newQuantity });
@@ -479,7 +478,7 @@ export default function QuoteBuilder() {
                                       e.stopPropagation();
                                       updateQuantity(procedure.id, -1, procedure);
                                     }}
-                                    disabled={item.quantity <= (procedure.minMl ? parseFloat(procedure.minMl as string) : 1)}
+                                    disabled={item.quantity <= 1}
                                     data-testid={`button-decrease-${procedure.id}`}
                                   >
                                     <Minus className="h-3 w-3" />
@@ -495,7 +494,7 @@ export default function QuoteBuilder() {
                                       e.stopPropagation();
                                       updateQuantity(procedure.id, 1, procedure);
                                     }}
-                                    disabled={item.quantity >= (procedure.maxMl ? parseFloat(procedure.maxMl as string) : 10)}
+                                    disabled={item.quantity >= 10}
                                     data-testid={`button-increase-${procedure.id}`}
                                   >
                                     <Plus className="h-3 w-3" />
