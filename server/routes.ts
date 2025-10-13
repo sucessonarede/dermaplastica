@@ -17,6 +17,7 @@ const createQuoteBodySchema = z.object({
     quantity: z.number().positive(),
     customPrice: z.number().positive().optional(),
     subtotal: z.number().positive(),
+    note: z.string().optional(),
   })).min(1, "At least one item is required"),
 });
 

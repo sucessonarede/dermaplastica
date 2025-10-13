@@ -3,6 +3,7 @@
 ## Recent Changes
 
 ### October 13, 2025
+- **Added procedure-level observations/notes**: Users can now add custom text observations to each procedure in the quote summary (e.g., "região malar direita", "aplicação na testa"). Notes display with a MessageSquare icon and can be edited inline. Notes are fully persisted to the database and restored when loading saved quotes. This allows clinics to specify detailed application areas or special instructions for each procedure.
 - **Added quantity multiplier to all procedures**: All procedures now have a quantity multiplier with +/- controls, not just those with mlPrice. Users can select multiple units of any procedure (e.g., "2x Lifting com Fios"). The summary displays the quantity breakdown for all procedures, and the total reflects the multiplied values. Regular procedures allow 1-99 units, while mlPrice procedures use their configured min/max constraints.
 - **Reorganized QuoteBuilder layout**: Changed from 2x2 grid layout to a single horizontal row with scroll. All 4 protocol cards (Sustentação, Estruturação, Embelezamento, Revitalização) and the summary card (Resumo do Protocolo) now appear in one horizontal line. Users can scroll horizontally to see all cards, with the summary appearing at the end. Each card has a fixed width of 380px.
 
