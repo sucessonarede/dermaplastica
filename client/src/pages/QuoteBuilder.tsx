@@ -154,12 +154,8 @@ export default function QuoteBuilder() {
       if (item) {
         const newQuantity = item.quantity + delta;
         
-        // For mlPrice procedures, allow 1-10 mL
-        // For regular procedures, allow 1-99 units
-        const minQty = 1;
-        const maxQty = procedure.mlPrice ? 10 : 99;
-        
-        if (newQuantity >= minQty && newQuantity <= maxQty) {
+        // No limits - allow any positive quantity (minimum 1)
+        if (newQuantity >= 1) {
           newMap.set(procedureId, { ...item, quantity: newQuantity });
         }
       }
@@ -500,7 +496,6 @@ export default function QuoteBuilder() {
                                       e.stopPropagation();
                                       updateQuantity(procedure.id, 1, procedure);
                                     }}
-                                    disabled={item.quantity >= 10}
                                     data-testid={`button-increase-${procedure.id}`}
                                   >
                                     <Plus className="h-3 w-3" />
@@ -536,7 +531,6 @@ export default function QuoteBuilder() {
                                       e.stopPropagation();
                                       updateQuantity(procedure.id, 1, procedure);
                                     }}
-                                    disabled={item.quantity >= 99}
                                     data-testid={`button-increase-${procedure.id}`}
                                   >
                                     <Plus className="h-3 w-3" />
