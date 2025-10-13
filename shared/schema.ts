@@ -117,6 +117,7 @@ export const quoteItems = pgTable("quote_items", {
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
   customPrice: decimal("custom_price", { precision: 10, scale: 2 }),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  note: text("note"),
 });
 
 export const insertQuoteSchema = createInsertSchema(quotes).omit({

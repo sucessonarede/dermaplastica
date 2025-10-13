@@ -25,7 +25,8 @@ import {
   Edit2,
   Save,
   FileText,
-  Download
+  Download,
+  MessageSquare
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -36,6 +37,7 @@ import { type Procedure, type DermaliftProtocol, type Patient } from "@shared/sc
 interface SelectedItem {
   quantity: number;
   customPrice?: number;
+  note?: string;
 }
 
 export default function QuoteBuilder() {
@@ -45,6 +47,7 @@ export default function QuoteBuilder() {
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch procedures from API
@@ -82,6 +85,7 @@ export default function QuoteBuilder() {
           itemsMap.set(procedure.id, {
             quantity: parseFloat(item.quantity),
             customPrice: item.customPrice ? parseFloat(item.customPrice) : undefined,
+            note: item.note || undefined,
           });
         }
       });
@@ -190,6 +194,29 @@ export default function QuoteBuilder() {
     });
   };
 
+  const updateNote = (procedureId: string, note: string) => {
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      const item = newMap.get(procedureId);
+      if (item) {
+        newMap.set(procedureId, { ...item, note: note.trim() || undefined });
+      }
+      return newMap;
+    });
+  };
+
+  const removeNote = (procedureId: string) => {
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      const item = newMap.get(procedureId);
+      if (item) {
+        const { note, ...rest } = item;
+        newMap.set(procedureId, rest);
+      }
+      return newMap;
+    });
+  };
+
   const handleSelectPatient = (patient: any) => {
     setSelectedPatient(patient);
     setPatientDialogOpen(false);
@@ -244,6 +271,7 @@ export default function QuoteBuilder() {
           quantity: item.quantity,
           customPrice: item.customPrice,
           subtotal,
+          note: item.note,
         };
       });
 
@@ -668,6 +696,75 @@ export default function QuoteBuilder() {
                                 </Button>
                               </div>
                             )}
+                            
+                            {/* Note section */}
+                            <div className={`${hasCustomPrice || item?.note ? 'pt-2 border-t border-border/50' : 'pt-2'}`}>
+                              {editingNote === procedure.id ? (
+                                <div className="space-y-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Ex: região malar direita, aplicação na testa..."
+                                    className="h-8 text-xs"
+                                    defaultValue={item?.note || ''}
+                                    onBlur={(e) => {
+                                      const value = e.target.value.trim();
+                                      if (value) {
+                                        updateNote(procedure.id, value);
+                                      } else {
+                                        removeNote(procedure.id);
+                                      }
+                                      setEditingNote(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const value = (e.target as HTMLInputElement).value.trim();
+                                        if (value) {
+                                          updateNote(procedure.id, value);
+                                        } else {
+                                          removeNote(procedure.id);
+                                        }
+                                        setEditingNote(null);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingNote(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                    data-testid={`input-note-${procedure.id}`}
+                                  />
+                                </div>
+                              ) : (
+                                <div>
+                                  {item?.note ? (
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-start gap-1 flex-1">
+                                        <MessageSquare className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                        <p className="text-xs text-muted-foreground italic">{item.note}</p>
+                                      </div>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-5 w-5"
+                                        onClick={() => setEditingNote(procedure.id)}
+                                        data-testid={`button-edit-note-${procedure.id}`}
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 text-xs text-muted-foreground"
+                                      onClick={() => setEditingNote(procedure.id)}
+                                      data-testid={`button-add-note-${procedure.id}`}
+                                    >
+                                      <MessageSquare className="h-3 w-3 mr-1" />
+                                      Adicionar observação
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
