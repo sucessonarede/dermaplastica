@@ -2,12 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Presentation, Edit2, FileText, Trash2 } from "lucide-react";
+import { Presentation, Edit2, FileText, Trash2, Search, Calendar, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +57,9 @@ interface SavedQuote {
 export default function SavedQuotes() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const { data: savedQuotes, isLoading: isLoadingSavedQuotes } = useQuery<SavedQuote[]>({
     queryKey: ["/api/quotes"],
@@ -107,12 +112,91 @@ export default function SavedQuotes() {
     return variantMap[status] || "outline";
   };
 
+  const filteredQuotes = savedQuotes?.filter((quote) => {
+    // Filter by search term (patient name)
+    const matchesSearch = searchTerm.trim() === "" || 
+      quote.patient.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Filter by date range
+    const quoteDate = new Date(quote.createdAt);
+    const matchesStartDate = !startDate || quoteDate >= new Date(startDate);
+    const matchesEndDate = !endDate || quoteDate <= new Date(endDate + "T23:59:59");
+
+    return matchesSearch && matchesStartDate && matchesEndDate;
+  }) || [];
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const hasActiveFilters = searchTerm.trim() !== "" || startDate !== "" || endDate !== "";
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Orçamentos Salvos</h1>
         <p className="text-muted-foreground">Gerencie e visualize seus orçamentos</p>
       </div>
+
+      {/* Filters Section */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome do paciente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-quotes"
+              />
+            </div>
+            <div className="flex gap-2">
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  placeholder="Data inicial"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-9 w-full sm:w-auto"
+                  data-testid="input-start-date"
+                />
+              </div>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  placeholder="Data final"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="pl-9 w-full sm:w-auto"
+                  data-testid="input-end-date"
+                />
+              </div>
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={clearFilters}
+                  data-testid="button-clear-filters"
+                  title="Limpar filtros"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <div className="mt-3 text-sm text-muted-foreground">
+              {filteredQuotes.length} {filteredQuotes.length === 1 ? 'orçamento encontrado' : 'orçamentos encontrados'}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {isLoadingSavedQuotes ? (
         <Card>
@@ -137,9 +221,26 @@ export default function SavedQuotes() {
             </div>
           </CardContent>
         </Card>
+      ) : filteredQuotes.length === 0 ? (
+        <Card>
+          <CardContent className="py-16">
+            <div className="text-center space-y-4">
+              <Search className="h-16 w-16 mx-auto text-muted-foreground/50" />
+              <div>
+                <h3 className="font-semibold text-lg">Nenhum orçamento encontrado</h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Tente ajustar os filtros de busca
+                </p>
+              </div>
+              <Button onClick={clearFilters} variant="outline" data-testid="button-clear-filters-empty">
+                Limpar Filtros
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {savedQuotes.map((quote) => (
+          {filteredQuotes.map((quote) => (
             <Card key={quote.id} className="hover-elevate" data-testid={`card-quote-${quote.id}`}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
