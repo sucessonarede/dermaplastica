@@ -234,12 +234,18 @@ export default function QuoteBuilder() {
     }
 
     const mlPrice = procedure.mlPrice ? parseFloat(procedure.mlPrice as string) : null;
+    const discountedPrice = procedure.discountedPrice ? parseFloat(procedure.discountedPrice as string) : null;
+    const basePrice = parseFloat(procedure.price as string);
+    
     if (mlPrice) {
-      return mlPrice * item.quantity;
+      // Use discounted price if available, otherwise use mlPrice
+      const pricePerUnit = discountedPrice || mlPrice;
+      return pricePerUnit * item.quantity;
     }
 
-    // Multiply base price by quantity for non-mlPrice procedures
-    return parseFloat(procedure.price as string) * item.quantity;
+    // Use discounted price if available, otherwise use base price
+    const pricePerUnit = discountedPrice || basePrice;
+    return pricePerUnit * item.quantity;
   };
 
   const total = procedures

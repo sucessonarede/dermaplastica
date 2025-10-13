@@ -386,9 +386,16 @@ export default function Presentation() {
                           )}
                         </div>
                       </div>
-                      <p className="font-semibold text-lg flex-shrink-0 ml-4">
-                        R$ {parseFloat(item.subtotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
+                      <div className="flex flex-col items-end flex-shrink-0 ml-4">
+                        {(item.procedure as any).discountedPrice && (
+                          <p className="text-sm text-muted-foreground line-through">
+                            R$ {(parseFloat(item.procedure.price) * parseFloat(item.quantity)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                        )}
+                        <p className={`font-semibold text-lg ${(item.procedure as any).discountedPrice ? 'text-green-600 dark:text-green-500' : ''}`}>
+                          R$ {parseFloat(item.subtotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
                     </div>
                   );
                 })}

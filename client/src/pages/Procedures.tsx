@@ -108,6 +108,7 @@ export default function Procedures() {
       name: procedure.name,
       description: procedure.description || "",
       price: Number(procedure.price),
+      discountedPrice: procedure.discountedPrice ? Number(procedure.discountedPrice) : undefined,
       mlPrice: procedure.mlPrice ? Number(procedure.mlPrice) : undefined,
       minMl: procedure.minMl ? Number(procedure.minMl) : undefined,
       maxMl: procedure.maxMl ? Number(procedure.maxMl) : undefined,
@@ -124,6 +125,7 @@ export default function Procedures() {
         name: "",
         description: "",
         price: "" as any,
+        discountedPrice: undefined,
         mlPrice: undefined,
         minMl: undefined,
         maxMl: undefined,
@@ -234,19 +236,34 @@ export default function Procedures() {
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço Base (Unid/mL) *</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-price" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preço Base (Unid/mL) *</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-price" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="discountedPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preço c/ Desconto (Unid/mL)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-discounted-price" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <DialogFooter>
                   <Button
                     type="button"

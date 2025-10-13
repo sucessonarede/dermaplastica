@@ -344,6 +344,7 @@ export class MemStorage implements IStorage {
     const [procedure] = await db.insert(procedures).values({
       ...insertProcedure,
       price: insertProcedure.price.toString(),
+      discountedPrice: insertProcedure.discountedPrice?.toString(),
       mlPrice: insertProcedure.mlPrice?.toString(),
       minMl: insertProcedure.minMl?.toString(),
       maxMl: insertProcedure.maxMl?.toString(),
@@ -355,6 +356,9 @@ export class MemStorage implements IStorage {
     const dbData: any = { ...updateData };
     if (dbData.price !== undefined) {
       dbData.price = dbData.price.toString();
+    }
+    if (dbData.discountedPrice !== undefined) {
+      dbData.discountedPrice = dbData.discountedPrice.toString();
     }
     if (dbData.mlPrice !== undefined) {
       dbData.mlPrice = dbData.mlPrice.toString();

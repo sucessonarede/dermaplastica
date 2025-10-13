@@ -39,6 +39,7 @@ export const procedures = pgTable("procedures", {
   name: text("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  discountedPrice: decimal("discounted_price", { precision: 10, scale: 2 }),
   mlPrice: decimal("ml_price", { precision: 10, scale: 2 }),
   minMl: decimal("min_ml", { precision: 10, scale: 2 }),
   maxMl: decimal("max_ml", { precision: 10, scale: 2 }),
@@ -67,6 +68,7 @@ export const insertProcedureSchema = createInsertSchema(procedures).omit({
 }).extend({
   protocol: z.enum(dermaliftProtocols),
   price: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive("Preço deve ser maior que 0")),
+  discountedPrice: optionalPositiveNumber,
   mlPrice: optionalPositiveNumber,
   minMl: optionalPositiveNumber,
   maxMl: optionalPositiveNumber,
