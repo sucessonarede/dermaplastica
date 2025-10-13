@@ -2,6 +2,9 @@
 
 ## Recent Changes
 
+### October 13, 2025
+- **Reorganized QuoteBuilder layout**: Changed from 2x2 grid layout to a single horizontal row with scroll. All 4 protocol cards (Sustentação, Estruturação, Embelezamento, Revitalização) and the summary card (Resumo do Protocolo) now appear in one horizontal line. Users can scroll horizontally to see all cards, with the summary appearing at the end. Each card has a fixed width of 380px.
+
 ### October 7, 2025
 - **Fixed procedure form validation**: Updated procedure form to only require name, protocol, and price fields. Optional numeric fields (mlPrice, minMl, maxMl) can now be left empty without validation errors. Created custom Zod schema helper that properly handles empty values while still validating positive numbers when values are provided.
 - **Fixed form reset on dialog close**: Procedure form now properly resets all fields to empty values when the dialog is closed. This ensures that after editing a procedure, opening the dialog to add a new one shows completely blank fields.
