@@ -3,8 +3,12 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Use WebSockets only in development, HTTP fetch in production
-if (process.env.NODE_ENV !== "production") {
+// Configure connection based on environment
+if (process.env.NODE_ENV === "production") {
+  // In production, use HTTP fetch instead of WebSocket
+  neonConfig.poolQueryViaFetch = true;
+} else {
+  // In development, use WebSocket for better performance
   neonConfig.webSocketConstructor = ws;
 }
 
