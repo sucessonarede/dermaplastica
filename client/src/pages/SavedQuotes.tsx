@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -80,6 +87,27 @@ export default function SavedQuotes() {
       toast({
         title: "Erro ao excluir",
         description: error.message || "Não foi possível excluir o orçamento.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ quoteId, status }: { quoteId: string; status: string }) => {
+      const res = await apiRequest("PUT", `/api/quotes/${quoteId}`, { status });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      toast({
+        title: "Status atualizado!",
+        description: "O status do orçamento foi atualizado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message || "Não foi possível atualizar o status.",
         variant: "destructive",
       });
     },
@@ -272,9 +300,26 @@ export default function SavedQuotes() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant={getStatusVariant(quote.status)} data-testid={`badge-status-${quote.id}`}>
-                    {getStatusLabel(quote.status)}
-                  </Badge>
+                  <Select
+                    value={quote.status}
+                    onValueChange={(value) => updateStatusMutation.mutate({ quoteId: quote.id, status: value })}
+                  >
+                    <SelectTrigger 
+                      className={`w-[130px] h-7 text-xs ${
+                        quote.status === 'pending' ? 'bg-secondary text-secondary-foreground' :
+                        quote.status === 'accepted' ? 'bg-primary text-primary-foreground' :
+                        'bg-destructive text-destructive-foreground'
+                      }`}
+                      data-testid={`select-status-${quote.id}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="accepted">Aceito</SelectItem>
+                      <SelectItem value="rejected">Recusado</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <Separator />
