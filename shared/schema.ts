@@ -45,6 +45,7 @@ export const procedures = pgTable("procedures", {
   maxMl: decimal("max_ml", { precision: 10, scale: 2 }),
   protocol: dermaliftProtocolEnum("protocol").notNull(),
   category: text("category"),
+  displayOrder: integer("display_order").notNull().default(0),
 });
 
 const optionalPositiveNumber = z
@@ -74,6 +75,7 @@ export const insertProcedureSchema = createInsertSchema(procedures).omit({
   mlPrice: optionalPositiveNumber,
   minMl: optionalPositiveNumber,
   maxMl: optionalPositiveNumber,
+  displayOrder: z.union([z.string(), z.number()]).pipe(z.coerce.number().int()).optional(),
 });
 
 export type InsertProcedure = z.infer<typeof insertProcedureSchema>;

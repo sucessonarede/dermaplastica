@@ -43,6 +43,7 @@ export default function Procedures() {
       maxMl: undefined,
       protocol: undefined,
       category: "",
+      displayOrder: 0,
     },
   });
 
@@ -115,6 +116,7 @@ export default function Procedures() {
       maxMl: procedure.maxMl ? Number(procedure.maxMl) : undefined,
       protocol: procedure.protocol,
       category: procedure.category || "",
+      displayOrder: procedure.displayOrder ?? 0,
     });
     setDialogOpen(true);
   };
@@ -132,6 +134,7 @@ export default function Procedures() {
         maxMl: undefined,
         protocol: undefined,
         category: "",
+        displayOrder: 0,
       });
     }
     setDialogOpen(open);
@@ -237,6 +240,26 @@ export default function Procedures() {
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="displayOrder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ordem de Exibição</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0" 
+                          data-testid="input-procedure-display-order" 
+                          {...field} 
+                          value={field.value ?? ""} 
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}

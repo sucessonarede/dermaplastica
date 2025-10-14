@@ -469,7 +469,7 @@ export class MemStorage implements IStorage {
   }
 
   async getProcedures(): Promise<Procedure[]> {
-    return await db.select().from(procedures).orderBy(procedures.name);
+    return await db.select().from(procedures).orderBy(procedures.displayOrder, procedures.name);
   }
 
   async createProcedure(insertProcedure: InsertProcedure): Promise<Procedure> {
