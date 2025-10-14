@@ -257,7 +257,15 @@ export default function Procedures() {
                       <FormItem>
                         <FormLabel>Preço c/ Desconto (Unid/mL)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" data-testid="input-procedure-discounted-price" {...field} value={field.value || ""} />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="0.00" 
+                            data-testid="input-procedure-discounted-price" 
+                            {...field} 
+                            value={field.value ?? ""} 
+                            onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.value)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
