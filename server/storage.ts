@@ -45,6 +45,9 @@ export interface TopProcedure {
 export interface ReportsMetrics {
   averageTicket: number;
   averageDiscount: number;
+  conversionRate: number;
+  acceptedQuotes: number;
+  quotesThisMonth: number;
   topProcedures: TopProcedure[];
 }
 
@@ -371,6 +374,32 @@ export class MemStorage implements IStorage {
     
     const averageDiscount = Number(avgDiscountResult[0]?.avg || 0);
     
+    // Count quotes this month
+    const quotesThisMonthResult = await db
+      .select({ count: count() })
+      .from(quotes)
+      .where(gte(quotes.createdAt, firstDayThisMonth));
+    
+    const quotesThisMonth = Number(quotesThisMonthResult[0]?.count || 0);
+    
+    // Count accepted quotes this month
+    const acceptedQuotesResult = await db
+      .select({ count: count() })
+      .from(quotes)
+      .where(
+        and(
+          gte(quotes.createdAt, firstDayThisMonth),
+          eq(quotes.status, 'accepted')
+        )
+      );
+    
+    const acceptedQuotes = Number(acceptedQuotesResult[0]?.count || 0);
+    
+    // Calculate conversion rate
+    const conversionRate = quotesThisMonth > 0 
+      ? (acceptedQuotes / quotesThisMonth) * 100 
+      : 0;
+    
     // Get top procedures by sales count and revenue
     const topProceduresResult = await db
       .select({
@@ -406,6 +435,9 @@ export class MemStorage implements IStorage {
     return {
       averageTicket,
       averageDiscount,
+      conversionRate,
+      acceptedQuotes,
+      quotesThisMonth,
       topProcedures,
     };
   }

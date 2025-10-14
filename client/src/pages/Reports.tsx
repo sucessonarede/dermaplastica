@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, DollarSign, Percent } from "lucide-react";
+import { BarChart3, DollarSign, Percent, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 interface TopProcedure {
@@ -11,6 +11,9 @@ interface TopProcedure {
 interface ReportsMetrics {
   averageTicket: number;
   averageDiscount: number;
+  conversionRate: number;
+  acceptedQuotes: number;
+  quotesThisMonth: number;
   topProcedures: TopProcedure[];
 }
 
@@ -32,12 +35,20 @@ export default function Reports() {
     { 
       metric: "Ticket Médio", 
       value: formatCurrency(metrics?.averageTicket || 0),
+      subtitle: "Média mensal",
       icon: DollarSign,
     },
     { 
       metric: "% Médio de Desconto", 
       value: metrics?.averageDiscount ? `${metrics.averageDiscount.toFixed(1)}%` : "0%",
+      subtitle: "Média mensal",
       icon: Percent,
+    },
+    {
+      metric: "Taxa de Conversão",
+      value: `${(metrics?.conversionRate ?? 0).toFixed(0)}%`,
+      subtitle: `${metrics?.acceptedQuotes || 0} de ${metrics?.quotesThisMonth || 0} aceitos`,
+      icon: TrendingUp,
     },
   ];
 
@@ -48,7 +59,7 @@ export default function Reports() {
         <p className="text-muted-foreground">Análise de desempenho e métricas da clínica</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         {monthlyMetrics.map((item, index) => (
           <Card key={item.metric} className="hover-elevate ring-1 ring-[hsl(var(--chart-3))]/20">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
@@ -56,14 +67,22 @@ export default function Reports() {
                 {item.metric}
               </CardTitle>
               <item.icon className={`h-4 w-4 ${
-                index === 0 ? "text-[hsl(var(--chart-4))]" : "text-[hsl(var(--chart-3))]"
+                index === 0 ? "text-[hsl(var(--chart-4))]" : 
+                index === 1 ? "text-[hsl(var(--chart-3))]" :
+                "text-[hsl(var(--chart-2))]"
               }`} />
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+                <div className="space-y-2">
+                  <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                </div>
               ) : (
-                <div className="text-2xl font-bold text-foreground">{item.value}</div>
+                <div>
+                  <div className="text-2xl font-bold text-foreground">{item.value}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{item.subtitle}</p>
+                </div>
               )}
             </CardContent>
           </Card>
