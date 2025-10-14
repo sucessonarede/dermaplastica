@@ -48,6 +48,10 @@ export default function QuoteBuilder() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [discountPercentage, setDiscountPercentage] = useState<number>(0);
+  const [installments, setInstallments] = useState<number>(1);
+  const [bonusList, setBonusList] = useState<string[]>([]);
+  const [newBonus, setNewBonus] = useState("");
   const { toast } = useToast();
 
   // Fetch procedures from API
@@ -244,13 +248,28 @@ export default function QuoteBuilder() {
     return pricePerUnit * item.quantity;
   };
 
-  const total = procedures
+  const subtotal = procedures
     .filter((p) => selectedItems.has(p.id))
     .reduce((sum, p) => sum + calculateSubtotal(p), 0);
+
+  const discountAmount = (subtotal * discountPercentage) / 100;
+  const total = subtotal - discountAmount;
+  const installmentValue = installments > 0 ? total / installments : total;
 
   const selectedProceduresList = procedures.filter((p) =>
     selectedItems.has(p.id)
   );
+
+  const addBonus = () => {
+    if (newBonus.trim()) {
+      setBonusList([...bonusList, newBonus.trim()]);
+      setNewBonus("");
+    }
+  };
+
+  const removeBonus = (index: number) => {
+    setBonusList(bonusList.filter((_, i) => i !== index));
+  };
 
   // Mutation to save quote
   const saveQuoteMutation = useMutation({
@@ -279,7 +298,7 @@ export default function QuoteBuilder() {
       const quoteData = {
         patientId: selectedPatient.id,
         total,
-        discount: 0,
+        discount: discountAmount,
         status: "pending",
         notes: null,
         items,
@@ -673,13 +692,127 @@ export default function QuoteBuilder() {
                     </div>
                   </div>
 
+                  {/* Discount, Installments and Bonus Section */}
+                  <div className="border-t pt-4 space-y-3">
+                    {/* Discount Percentage */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Desconto (%)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={discountPercentage}
+                        onChange={(e) => setDiscountPercentage(parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        className="h-9"
+                        data-testid="input-discount-percentage"
+                      />
+                    </div>
+
+                    {/* Installments */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Número de Parcelas
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={installments}
+                        onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
+                        placeholder="1"
+                        className="h-9"
+                        data-testid="input-installments"
+                      />
+                      {installments > 1 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {installments}x de R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Bonus List */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Bônus
+                      </label>
+                      <div className="flex gap-2 mb-2">
+                        <Input
+                          type="text"
+                          value={newBonus}
+                          onChange={(e) => setNewBonus(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addBonus();
+                            }
+                          }}
+                          placeholder="Ex: Limpeza de pele grátis"
+                          className="h-9 flex-1"
+                          data-testid="input-new-bonus"
+                        />
+                        <Button
+                          size="icon"
+                          onClick={addBonus}
+                          disabled={!newBonus.trim()}
+                          className="h-9 w-9 flex-shrink-0"
+                          data-testid="button-add-bonus"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {bonusList.length > 0 && (
+                        <div className="space-y-1.5">
+                          {bonusList.map((bonus, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between gap-2 rounded-md bg-muted p-2"
+                            >
+                              <span className="text-xs text-foreground">{bonus}</span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 flex-shrink-0"
+                                onClick={() => removeBonus(index)}
+                                data-testid={`button-remove-bonus-${index}`}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Total Section */}
                   <div className="border-t pt-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-sm font-medium text-muted-foreground">Total do Investimento</span>
-                      <span className="text-2xl font-bold text-primary" data-testid="text-total">
-                        R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
+                    <div className="space-y-2">
+                      {discountPercentage > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="text-muted-foreground" data-testid="text-subtotal">
+                            R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                      {discountPercentage > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Desconto ({discountPercentage}%)</span>
+                          <span className="text-destructive" data-testid="text-discount-amount">
+                            - R$ {discountAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Total do Investimento</span>
+                        <span className="text-2xl font-bold text-primary" data-testid="text-total">
+                          R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
