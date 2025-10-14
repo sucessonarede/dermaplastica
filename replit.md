@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 
 **Core Entities:**
 - **Users:** Authentication and access control (id, email, username, hashed password).
-- **Procedures:** Service catalog (id, name, description, price, mlPrice, minMl, maxMl, protocol, category). Supports per-mL pricing and quantity constraints.
+- **Procedures:** Service catalog (id, name, description, price, mlPrice, minMl, maxMl, protocol, category, displayOrder). Supports per-mL pricing and quantity constraints. The displayOrder field (integer, default 0) controls the display sequence in the Quote Builder's protocol lists—procedures are sorted by displayOrder ascending, then by name.
 - **Patients:** CRM functionality (id, name, phone, email, cpf, birthDate, address, city, state, origin, tags).
 - **Quotes:** Dermalift Protocol-based quotes (id, patientId, total, discount, discountPercentage, installments, bonusList, status, createdAt, notes). Supports percentage-based discounts, installment calculations, and bonus tracking.
 - **QuoteItems:** Line items for quotes (id, quoteId, procedureId, quantity, customPrice, subtotal, note). Supports flexible custom pricing and per-item observations.
