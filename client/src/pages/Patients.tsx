@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
   const { toast } = useToast();
 
   const { data: patients = [], isLoading } = useQuery<Patient[]>({
@@ -39,23 +42,52 @@ export default function Patients() {
     },
   });
 
-  const createPatientMutation = useMutation({
+  const savePatientMutation = useMutation({
     mutationFn: async (data: InsertPatient) => {
-      const res = await apiRequest("POST", "/api/patients", data);
-      return await res.json();
+      if (editingPatient) {
+        const res = await apiRequest("PATCH", `/api/patients/${editingPatient.id}`, data);
+        return await res.json();
+      } else {
+        const res = await apiRequest("POST", "/api/patients", data);
+        return await res.json();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       toast({
-        title: "Paciente criado!",
-        description: "O paciente foi adicionado com sucesso.",
+        title: editingPatient ? "Paciente atualizado!" : "Paciente criado!",
+        description: editingPatient 
+          ? "O paciente foi atualizado com sucesso."
+          : "O paciente foi adicionado com sucesso.",
       });
       form.reset();
       setDialogOpen(false);
+      setEditingPatient(null);
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro ao criar paciente",
+        title: editingPatient ? "Erro ao atualizar paciente" : "Erro ao criar paciente",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePatientMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/patients/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      toast({
+        title: "Paciente excluído!",
+        description: "O paciente foi removido com sucesso.",
+      });
+      setDeletingPatient(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir paciente",
         description: error.message,
         variant: "destructive",
       });
@@ -63,7 +95,42 @@ export default function Patients() {
   });
 
   const onSubmit = (data: InsertPatient) => {
-    createPatientMutation.mutate(data);
+    savePatientMutation.mutate(data);
+  };
+
+  const handleEdit = (patient: Patient) => {
+    setEditingPatient(patient);
+    form.reset({
+      name: patient.name,
+      phone: patient.phone || "",
+      email: patient.email || "",
+      cpf: patient.cpf || "",
+      birthDate: patient.birthDate || "",
+      address: patient.address || "",
+      city: patient.city || "",
+      state: patient.state || "",
+      origin: patient.origin || "",
+      tags: patient.tags || [],
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (patient: Patient) => {
+    setDeletingPatient(patient);
+  };
+
+  const confirmDelete = () => {
+    if (deletingPatient) {
+      deletePatientMutation.mutate(deletingPatient.id);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingPatient(null);
+      form.reset();
+    }
   };
 
   const filteredPatients = patients.filter((p) =>
@@ -85,7 +152,7 @@ export default function Patients() {
           <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Pacientes</h1>
           <p className="text-muted-foreground">Gerencie seus pacientes e leads</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-patient">
               <Plus className="h-4 w-4 mr-2" />
@@ -94,9 +161,11 @@ export default function Patients() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Adicionar Novo Paciente</DialogTitle>
+              <DialogTitle>
+                {editingPatient ? "Editar Paciente" : "Adicionar Novo Paciente"}
+              </DialogTitle>
               <DialogDescription>
-                Preencha os dados do novo paciente. Campos obrigatórios estão marcados com *.
+                Preencha os dados do paciente. Campos obrigatórios estão marcados com *.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -174,17 +243,17 @@ export default function Patients() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setDialogOpen(false)}
+                    onClick={() => handleDialogClose(false)}
                     data-testid="button-cancel-patient"
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createPatientMutation.isPending}
+                    disabled={savePatientMutation.isPending}
                     data-testid="button-save-patient"
                   >
-                    {createPatientMutation.isPending ? "Salvando..." : "Salvar"}
+                    {savePatientMutation.isPending ? "Salvando..." : "Salvar"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -212,7 +281,7 @@ export default function Patients() {
           </div>
         ) : (
           filteredPatients.map((patient, index) => (
-            <Card key={patient.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20" data-testid={`card-patient-${patient.id}`}>
+            <Card key={patient.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20 group" data-testid={`card-patient-${patient.id}`}>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <Avatar>
@@ -225,7 +294,29 @@ export default function Patients() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
-                    <h3 className="font-semibold text-foreground">{patient.name}</h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-foreground">{patient.name}</h3>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => handleEdit(patient)}
+                          data-testid={`button-edit-patient-${patient.id}`}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(patient)}
+                          data-testid={`button-delete-patient-${patient.id}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
                     <div className="space-y-1">
                       {patient.phone && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -267,6 +358,28 @@ export default function Patients() {
           ))
         )}
       </div>
+
+      <AlertDialog open={!!deletingPatient} onOpenChange={(open) => !open && setDeletingPatient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o paciente <strong>{deletingPatient?.name}</strong>? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deletePatientMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

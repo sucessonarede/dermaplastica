@@ -74,6 +74,8 @@ export interface IStorage {
   // Patient methods
   getPatients(): Promise<Patient[]>;
   createPatient(patient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient>;
+  updatePatient(id: string, patient: Partial<Omit<Patient, 'id'>>): Promise<Patient | undefined>;
+  deletePatient(id: string): Promise<boolean>;
   
   // Procedure methods
   getProcedures(): Promise<Procedure[]>;
@@ -449,6 +451,20 @@ export class MemStorage implements IStorage {
   async createPatient(insertPatient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient> {
     const [patient] = await db.insert(patients).values(insertPatient).returning();
     return patient;
+  }
+
+  async updatePatient(id: string, updateData: Partial<Omit<Patient, 'id'>>): Promise<Patient | undefined> {
+    const [patient] = await db
+      .update(patients)
+      .set(updateData)
+      .where(eq(patients.id, id))
+      .returning();
+    return patient;
+  }
+
+  async deletePatient(id: string): Promise<boolean> {
+    const result = await db.delete(patients).where(eq(patients.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getProcedures(): Promise<Procedure[]> {

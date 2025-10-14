@@ -283,6 +283,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/patients/:id", async (req: Request, res: Response) => {
+    try {
+      const updateData = insertPatientSchema.partial().parse(req.body);
+      const patient = await storage.updatePatient(req.params.id, updateData);
+      
+      if (!patient) {
+        res.status(404).json({ error: "Paciente não encontrado" });
+        return;
+      }
+      
+      res.json(patient);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error updating patient:", error);
+        res.status(500).json({ error: "Erro ao atualizar paciente" });
+      }
+    }
+  });
+
+  app.delete("/api/patients/:id", async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deletePatient(req.params.id);
+      
+      if (!success) {
+        res.status(404).json({ error: "Paciente não encontrado" });
+        return;
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting patient:", error);
+      res.status(500).json({ error: "Erro ao excluir paciente" });
+    }
+  });
+
   // Procedure routes
   app.get("/api/procedures", async (req: Request, res: Response) => {
     try {
