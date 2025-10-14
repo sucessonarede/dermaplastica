@@ -269,36 +269,6 @@ export default function ClinicSettings() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground">Plano Atual</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Badge className="mb-2">Premium</Badge>
-                      <p className="text-2xl font-bold text-foreground">R$ 299/mês</p>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Usuários</span>
-                        <span className="font-medium text-foreground">3 / 10</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Orçamentos/mês</span>
-                        <span className="font-medium text-foreground">67 / 200</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Armazenamento</span>
-                        <span className="font-medium text-foreground">2.4 GB / 50 GB</span>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full" data-testid="button-upgrade-plan">
-                      Fazer Upgrade
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
 
