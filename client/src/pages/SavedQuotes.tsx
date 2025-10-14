@@ -308,7 +308,7 @@ export default function SavedQuotes() {
                       className={`w-[130px] h-7 text-xs ${
                         quote.status === 'pending' ? 'bg-secondary text-secondary-foreground' :
                         quote.status === 'accepted' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' :
-                        'bg-destructive text-destructive-foreground'
+                        'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
                       }`}
                       data-testid={`select-status-${quote.id}`}
                     >
