@@ -708,39 +708,42 @@ export default function QuoteBuilder() {
 
                   {/* Discount, Installments and Bonus Section */}
                   <div className="border-t pt-4 space-y-3">
-                    {/* Discount Percentage */}
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        Desconto (%)
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={discountPercentage}
-                        onChange={(e) => setDiscountPercentage(parseFloat(e.target.value) || 0)}
-                        placeholder="0"
-                        className="h-9"
-                        data-testid="input-discount-percentage"
-                      />
-                    </div>
+                    {/* Discount and Installments side by side */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Discount Percentage */}
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                          Desconto (%)
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={discountPercentage}
+                          onChange={(e) => setDiscountPercentage(parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="h-9"
+                          data-testid="input-discount-percentage"
+                        />
+                      </div>
 
-                    {/* Installments */}
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        Número de Parcelas
-                      </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={installments}
-                        onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
-                        placeholder="1"
-                        className="h-9"
-                        data-testid="input-installments"
-                      />
+                      {/* Installments */}
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                          Parcelas
+                        </label>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={installments}
+                          onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
+                          placeholder="1"
+                          className="h-9"
+                          data-testid="input-installments"
+                        />
+                      </div>
                     </div>
 
                     {/* Bonus List */}
