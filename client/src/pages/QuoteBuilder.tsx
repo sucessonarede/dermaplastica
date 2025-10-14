@@ -589,6 +589,11 @@ export default function QuoteBuilder() {
                                   </p>
                                 )}
                               </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-primary" data-testid={`text-subtotal-${procedure.id}`}>
+                                  R$ {calculateSubtotal(procedure).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
                             </div>
                             
                             {/* Note section */}
@@ -662,6 +667,16 @@ export default function QuoteBuilder() {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* Total Section */}
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm font-medium text-muted-foreground">Total do Investimento</span>
+                      <span className="text-2xl font-bold text-primary" data-testid="text-total">
+                        R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
                     </div>
                   </div>
 
