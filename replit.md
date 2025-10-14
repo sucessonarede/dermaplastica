@@ -28,9 +28,9 @@ Preferred communication style: Simple, everyday language.
 
 **Technology Stack:** Express.js, TypeScript, Node.js, ESBuild.
 
-**Data Layer:** Drizzle ORM, Neon serverless PostgreSQL database (via `ws` package for connections). Features an abstract `IStorage` interface for CRUD operations.
+**Data Layer:** Drizzle ORM, Supabase PostgreSQL database (via `pg` node-postgres driver with SSL). Features an abstract `IStorage` interface for CRUD operations.
 
-**API Design:** RESTful endpoints (`/api` prefix), logging, error handling, session-based authentication with `express-session` (7-day httpOnly/secure cookies, `SESSION_SECRET`).
+**API Design:** RESTful endpoints (`/api` prefix), logging, error handling, session-based authentication with `express-session` (7-day httpOnly/secure cookies, `SESSION_SECRET`). Session storage uses memorystore in development and PostgreSQL (connect-pg-simple) in production.
 
 **Authentication System:** Email/password authentication using Bcrypt for hashing. Endpoints for registration, login, user info (`/me`), and logout. Frontend forms use `react-hook-form` with Zod validation. Cache clearing with `queryClient.clear()` on login, registration, and logout ensures fresh data and prevents data leakage.
 
@@ -48,7 +48,7 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 **Database:**
-- Neon Serverless PostgreSQL (via `@neondatabase/serverless`)
+- Supabase PostgreSQL (via `pg` node-postgres driver with SSL)
 
 **Development Tools:**
 - Replit-specific plugins (cartographer, dev-banner, runtime-error-modal)
