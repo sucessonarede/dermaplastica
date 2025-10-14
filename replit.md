@@ -20,7 +20,7 @@ Preferred communication style: Simple, everyday language.
 
 **Reports Module:** Real-time analytics dashboard displaying clinic performance metrics. Shows average ticket value, average discount percentage (calculated across ALL quotes including zero-discount ones), and top procedures by sales count and revenue. Data aggregated from quote_items table using SQL GROUP BY operations.
 
-**Quote Builder - Dermalift Protocol:** Patient-centric interface with dialog-based patient selection. Displays four Dermalift pillars (Sustentação, Estruturação, Embelezamento, Revitalização) in a horizontal scrolling layout. Supports interactive procedure selection with unlimited quantity multipliers (no min/max limits) for all procedures, and a discount pricing system with visual indicators. The summary panel displays individual procedure subtotals and total investment value in real-time. Real-time calculation prioritizes custom prices over discounted prices, then mL/base prices. Observations/notes can be added per procedure.
+**Quote Builder - Dermalift Protocol:** Patient-centric interface with dialog-based patient selection. Displays four Dermalift pillars (Sustentação, Estruturação, Embelezamento, Revitalização) in a horizontal scrolling layout. Supports interactive procedure selection with unlimited quantity multipliers (no min/max limits) for all procedures, and a discount pricing system with visual indicators. The summary panel displays individual procedure subtotals, discount percentage input, installment calculator, bonus list management, and total investment value in real-time. Real-time calculation prioritizes custom prices over discounted prices, then mL/base prices. Observations/notes can be added per procedure. Discount percentage is applied to the subtotal to calculate the final total. Installment input divides the total by the number of installments and displays the per-installment value.
 
 **Presentation Module:** Dynamic, fullscreen presentation accessible via `/apresentacao/:quoteId`, featuring 8 slides detailing the Dermalift methodology. Utilizes Embla Carousel for transitions. Includes a "Personalized Plan" slide displaying patient details, selected procedures with quantities, and total investment, incorporating discounts and per-procedure notes.
 
@@ -40,8 +40,8 @@ Preferred communication style: Simple, everyday language.
 - **Users:** Authentication and access control (id, email, username, hashed password).
 - **Procedures:** Service catalog (id, name, description, price, mlPrice, minMl, maxMl, protocol, category). Supports per-mL pricing and quantity constraints.
 - **Patients:** CRM functionality (id, name, phone, email, cpf, birthDate, address, city, state, origin, tags).
-- **Quotes:** Dermalift Protocol-based quotes (id, patientId, total, discount, status, createdAt, notes).
-- **QuoteItems:** Line items for quotes (id, quoteId, procedureId, quantity, customPrice, subtotal). Supports flexible custom pricing.
+- **Quotes:** Dermalift Protocol-based quotes (id, patientId, total, discount, discountPercentage, installments, bonusList, status, createdAt, notes). Supports percentage-based discounts, installment calculations, and bonus tracking.
+- **QuoteItems:** Line items for quotes (id, quoteId, procedureId, quantity, customPrice, subtotal, note). Supports flexible custom pricing and per-item observations.
 
 **Schema Validation:** Zod schemas derived from Drizzle tables for type-safe operations and shared client/server definitions. PostgreSQL enum enforcement.
 

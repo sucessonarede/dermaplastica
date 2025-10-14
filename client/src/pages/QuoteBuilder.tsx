@@ -94,6 +94,17 @@ export default function QuoteBuilder() {
         }
       });
       setSelectedItems(itemsMap);
+
+      // Restore discount, installments and bonus list
+      if (loadedQuote.discountPercentage !== undefined && loadedQuote.discountPercentage !== null) {
+        setDiscountPercentage(parseFloat(loadedQuote.discountPercentage));
+      }
+      if (loadedQuote.installments !== undefined && loadedQuote.installments !== null) {
+        setInstallments(loadedQuote.installments);
+      }
+      if (loadedQuote.bonusList && Array.isArray(loadedQuote.bonusList)) {
+        setBonusList(loadedQuote.bonusList);
+      }
     }
   }, [loadedQuote, procedures]);
 
@@ -299,6 +310,9 @@ export default function QuoteBuilder() {
         patientId: selectedPatient.id,
         total,
         discount: discountAmount,
+        discountPercentage,
+        installments,
+        bonusList,
         status: "pending",
         notes: null,
         items,

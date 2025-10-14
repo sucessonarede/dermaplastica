@@ -109,6 +109,9 @@ export const quotes = pgTable("quotes", {
   patientId: varchar("patient_id").notNull().references(() => patients.id),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   discount: decimal("discount", { precision: 10, scale: 2 }),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }),
+  installments: integer("installments").default(1),
+  bonusList: text("bonus_list").array(),
   status: text("status").notNull().default("pending"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   notes: text("notes"),
@@ -130,6 +133,9 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
 }).extend({
   total: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive()),
   discount: z.union([z.string(), z.number()]).pipe(z.coerce.number()).optional(),
+  discountPercentage: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(100)).optional(),
+  installments: z.number().int().min(1).optional(),
+  bonusList: z.array(z.string()).optional(),
 });
 
 export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({

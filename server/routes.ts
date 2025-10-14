@@ -10,6 +10,9 @@ const createQuoteBodySchema = z.object({
   patientId: z.string(),
   total: z.number().positive(),
   discount: z.number().optional(),
+  discountPercentage: z.number().min(0).max(100).optional(),
+  installments: z.number().int().min(1).optional(),
+  bonusList: z.array(z.string()).optional(),
   status: z.string().optional(),
   notes: z.string().optional().nullable(),
   items: z.array(z.object({
@@ -140,6 +143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         patientId: body.patientId,
         total: body.total,
         discount: body.discount,
+        discountPercentage: body.discountPercentage !== undefined ? body.discountPercentage : undefined,
+        installments: body.installments || 1,
+        bonusList: body.bonusList || [],
         status: body.status || "pending",
         notes: body.notes,
       };
