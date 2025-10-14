@@ -95,7 +95,7 @@ export default function ClinicSettings() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-3 items-start">
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
