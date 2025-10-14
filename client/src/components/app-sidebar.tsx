@@ -68,7 +68,7 @@ export function AppSidebar() {
   const [location] = useLocation();
   
   const { data: clinicSettings } = useQuery<ClinicSettings>({
-    queryKey: ["/api/clinic/settings"],
+    queryKey: ["/api/clinic-settings"],
   });
 
   return (
