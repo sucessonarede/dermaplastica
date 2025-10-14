@@ -314,8 +314,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting patient:", error);
+      
+      // Check for foreign key constraint violation
+      if (error.code === '23503') {
+        res.status(400).json({ 
+          error: "Não é possível excluir este paciente pois ele possui orçamentos associados. Exclua os orçamentos primeiro." 
+        });
+        return;
+      }
+      
       res.status(500).json({ error: "Erro ao excluir paciente" });
     }
   });
