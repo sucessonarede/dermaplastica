@@ -20,6 +20,8 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import type { ClinicSettings } from "@shared/schema";
 
 const menuItems = [
   {
@@ -64,6 +66,10 @@ const adminItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  
+  const { data: clinicSettings } = useQuery<ClinicSettings>({
+    queryKey: ["/api/clinic/settings"],
+  });
 
   return (
     <Sidebar>
@@ -74,7 +80,9 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="font-serif text-lg font-bold text-foreground">Dermalift</h2>
-            <p className="text-xs text-muted-foreground">Gestão de Clínicas</p>
+            <p className="text-xs text-muted-foreground">
+              {clinicSettings?.clinicName || "Gestão de Clínicas"}
+            </p>
           </div>
         </div>
       </SidebarHeader>
