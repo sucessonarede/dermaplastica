@@ -54,6 +54,8 @@ export default function Patients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/metrics"] });
       toast({
         title: editingPatient ? "Paciente atualizado!" : "Paciente criado!",
         description: editingPatient 
@@ -79,6 +81,8 @@ export default function Patients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/metrics"] });
       toast({
         title: "Paciente excluído!",
         description: "O paciente foi removido com sucesso.",

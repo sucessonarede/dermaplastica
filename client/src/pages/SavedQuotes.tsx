@@ -82,6 +82,9 @@ export default function SavedQuotes() {
         description: "O orçamento foi excluído com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/metrics"] });
     },
     onError: (error: Error) => {
       toast({
@@ -99,6 +102,9 @@ export default function SavedQuotes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/metrics"] });
       toast({
         title: "Status atualizado!",
         description: "O status do orçamento foi atualizado com sucesso.",

@@ -293,8 +293,11 @@ export default function QuoteBuilder() {
         title: "Orçamento salvo!",
         description: "Abrindo apresentação...",
       });
-      // Invalidar cache para recarregar lista
+      // Invalidar cache para recarregar todas as telas
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/metrics"] });
       // Navegar para apresentação
       setLocation(`/apresentacao/${data.id}`);
     },
