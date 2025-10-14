@@ -220,7 +220,7 @@ export default function Dashboard() {
                 Novo Orçamento
               </Button>
             </Link>
-            <Link href="/patients/new" className="block">
+            <Link href="/patients" className="block">
               <Button variant="outline" className="w-full" data-testid="button-new-patient">
                 <Users className="h-4 w-4 mr-2" />
                 Cadastrar Paciente
