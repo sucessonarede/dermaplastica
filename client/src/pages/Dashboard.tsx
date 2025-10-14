@@ -214,7 +214,7 @@ export default function Dashboard() {
             <CardTitle className="text-[hsl(var(--primary))]">Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Link href="/quotes/new" className="block">
+            <Link href="/protocolo-dermalift" className="block">
               <Button className="w-full" data-testid="button-new-quote">
                 <Calculator className="h-4 w-4 mr-2" />
                 Novo Orçamento
