@@ -447,7 +447,17 @@ export default function QuoteBuilder() {
             {(Object.keys(protocolConfig) as DermaliftProtocol[]).map((protocol) => {
               const config = protocolConfig[protocol];
               const Icon = config.icon;
-              const protocolProcedures = procedures.filter((p) => p.protocol === protocol);
+              const protocolProcedures = procedures
+                .filter((p) => p.protocol === protocol)
+                .sort((a, b) => {
+                  // Sort by displayOrder first (ascending), then by name
+                  const orderA = a.displayOrder ?? 0;
+                  const orderB = b.displayOrder ?? 0;
+                  if (orderA !== orderB) {
+                    return orderA - orderB;
+                  }
+                  return a.name.localeCompare(b.name);
+                });
 
               return (
                 <Card
