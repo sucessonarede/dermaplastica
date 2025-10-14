@@ -684,35 +684,15 @@ export default function QuoteBuilder() {
                   </div>
 
                   <div className="border-t pt-4">
-                    <div className="space-y-2">
-                      <Button
-                        className="w-full bg-gradient-to-r from-primary to-chart-2 hover:opacity-90"
-                        disabled={!selectedPatient || selectedProceduresList.length === 0 || saveQuoteMutation.isPending}
-                        onClick={handleSaveQuote}
-                        data-testid="button-save-quote"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        {saveQuoteMutation.isPending ? "Salvando..." : "Salvar e Apresentar"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        disabled={!selectedPatient || selectedProceduresList.length === 0}
-                        data-testid="button-generate-pdf"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Gerar Orçamento PDF
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        disabled={!selectedPatient || selectedProceduresList.length === 0}
-                        data-testid="button-share-quote"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Compartilhar Link
-                      </Button>
-                    </div>
+                    <Button
+                      className="w-full bg-gradient-to-r from-primary to-chart-2 hover:opacity-90"
+                      disabled={!selectedPatient || selectedProceduresList.length === 0 || saveQuoteMutation.isPending}
+                      onClick={handleSaveQuote}
+                      data-testid="button-save-quote"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {saveQuoteMutation.isPending ? "Salvando..." : "Salvar e Apresentar"}
+                    </Button>
                   </div>
                 </>
               )}

@@ -75,8 +75,9 @@ export default function Procedures() {
       const res = await apiRequest("PUT", `/api/procedures/${id}`, data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/procedures"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/procedures"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/procedures"] });
       toast({
         title: "Procedimento atualizado!",
         description: "O procedimento foi atualizado com sucesso.",
