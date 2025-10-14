@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 
@@ -315,6 +315,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         console.error("Error updating procedure:", error);
         res.status(500).json({ error: "Erro ao atualizar procedimento" });
+      }
+    }
+  });
+
+  // Clinic Settings routes
+  app.get("/api/clinic-settings", async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getClinicSettings();
+      res.json(settings || null);
+    } catch (error) {
+      console.error("Error fetching clinic settings:", error);
+      res.status(500).json({ error: "Erro ao buscar configurações" });
+    }
+  });
+
+  app.put("/api/clinic-settings", async (req: Request, res: Response) => {
+    try {
+      const body = insertClinicSettingsSchema.parse(req.body);
+      const settings = await storage.updateClinicSettings(body);
+      res.json(settings);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error updating clinic settings:", error);
+        res.status(500).json({ error: "Erro ao atualizar configurações" });
       }
     }
   });

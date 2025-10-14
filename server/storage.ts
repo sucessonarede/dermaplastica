@@ -7,11 +7,13 @@ import {
   type InsertQuoteItem,
   type Patient,
   type Procedure,
-  type InsertProcedure
+  type InsertProcedure,
+  type ClinicSettings,
+  type InsertClinicSettings
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, quotes, quoteItems, patients, procedures } from "@shared/schema";
+import { users, quotes, quoteItems, patients, procedures, clinicSettings } from "@shared/schema";
 import { eq, and, gte, sql, desc, count, inArray } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -58,6 +60,10 @@ export interface IStorage {
   getProcedures(): Promise<Procedure[]>;
   createProcedure(procedure: InsertProcedure): Promise<Procedure>;
   updateProcedure(id: string, procedure: Partial<InsertProcedure>): Promise<Procedure | undefined>;
+  
+  // Clinic Settings methods
+  getClinicSettings(): Promise<ClinicSettings | undefined>;
+  updateClinicSettings(settings: InsertClinicSettings): Promise<ClinicSettings>;
 }
 
 export class MemStorage implements IStorage {
@@ -377,6 +383,39 @@ export class MemStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  async getClinicSettings(): Promise<ClinicSettings | undefined> {
+    const [settings] = await db.select().from(clinicSettings).limit(1);
+    return settings;
+  }
+
+  async updateClinicSettings(insertSettings: InsertClinicSettings): Promise<ClinicSettings> {
+    // Check if settings exist
+    const existing = await this.getClinicSettings();
+    
+    const dbData: any = {
+      ...insertSettings,
+      monthlyGoal: insertSettings.monthlyGoal?.toString(),
+      conversionGoal: insertSettings.conversionGoal?.toString(),
+    };
+
+    if (existing) {
+      // Update existing
+      const [updated] = await db
+        .update(clinicSettings)
+        .set(dbData)
+        .where(eq(clinicSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new
+      const [created] = await db
+        .insert(clinicSettings)
+        .values(dbData)
+        .returning();
+      return created;
+    }
   }
 }
 

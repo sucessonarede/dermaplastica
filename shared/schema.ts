@@ -142,3 +142,28 @@ export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type Quote = typeof quotes.$inferSelect;
 export type InsertQuoteItem = z.infer<typeof insertQuoteItemSchema>;
 export type QuoteItem = typeof quoteItems.$inferSelect;
+
+export const clinicSettings = pgTable("clinic_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clinicName: text("clinic_name").notNull(),
+  cnpj: text("cnpj"),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  monthlyGoal: decimal("monthly_goal", { precision: 10, scale: 2 }),
+  conversionGoal: decimal("conversion_goal", { precision: 5, scale: 2 }),
+  newPatientsGoal: integer("new_patients_goal"),
+});
+
+export const insertClinicSettingsSchema = createInsertSchema(clinicSettings).omit({
+  id: true,
+}).extend({
+  clinicName: z.string().min(1, "Nome da clínica é obrigatório"),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  monthlyGoal: optionalPositiveNumber,
+  conversionGoal: optionalPositiveNumber,
+  newPatientsGoal: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().positive()).optional(),
+});
+
+export type InsertClinicSettings = z.infer<typeof insertClinicSettingsSchema>;
+export type ClinicSettings = typeof clinicSettings.$inferSelect;
