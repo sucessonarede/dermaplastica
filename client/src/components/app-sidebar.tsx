@@ -56,11 +56,6 @@ const menuItems = [
 
 const adminItems = [
   {
-    title: "Clínica",
-    url: "/clinic",
-    icon: Building2,
-  },
-  {
     title: "Configurações",
     url: "/settings",
     icon: Settings,

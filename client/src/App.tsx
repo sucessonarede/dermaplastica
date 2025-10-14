@@ -103,7 +103,6 @@ function Router() {
         <Route path="/quotes" component={QuoteBuilder} />
         <Route path="/procedures" component={Procedures} />
         <Route path="/reports" component={Reports} />
-        <Route path="/clinic" component={ClinicSettings} />
         <Route path="/settings" component={ClinicSettings} />
         <Route path="/apresentacao" component={SavedQuotes} />
         <Route component={NotFound} />
