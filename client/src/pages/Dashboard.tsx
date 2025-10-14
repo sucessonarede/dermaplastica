@@ -201,9 +201,9 @@ export default function Dashboard() {
                 Nenhum orçamento cadastrado ainda
               </div>
             )}
-            <Link href="/quotes">
+            <Link href="/apresentacao">
               <Button variant="outline" className="w-full mt-4" data-testid="button-view-all-quotes">
-                Ver Todos os Orçamentos
+                Orçamentos
               </Button>
             </Link>
           </CardContent>
