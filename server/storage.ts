@@ -33,6 +33,7 @@ export interface DashboardStats {
   quotesLastMonth: number;
   averageTicket: number;
   conversionRate: number;
+  acceptedQuotes: number;
 }
 
 export interface IStorage {
@@ -288,6 +289,7 @@ export class MemStorage implements IStorage {
       quotesLastMonth,
       averageTicket,
       conversionRate,
+      acceptedQuotes,
     };
   }
 

@@ -12,6 +12,7 @@ interface DashboardStats {
   quotesLastMonth: number;
   averageTicket: number;
   conversionRate: number;
+  acceptedQuotes: number;
 }
 
 function getGreeting() {
@@ -93,7 +94,7 @@ export default function Dashboard() {
     {
       title: "Taxa de Conversão",
       value: `${dashboardStats?.conversionRate.toFixed(0) || 0}%`,
-      change: "Orçamentos aceitos",
+      change: `${dashboardStats?.acceptedQuotes || 0} de ${dashboardStats?.quotesThisMonth || 0} aceitos`,
       icon: TrendingUp,
       trend: "up",
     },
