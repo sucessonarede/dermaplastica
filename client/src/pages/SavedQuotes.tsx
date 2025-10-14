@@ -307,7 +307,7 @@ export default function SavedQuotes() {
                     <SelectTrigger 
                       className={`w-[130px] h-7 text-xs ${
                         quote.status === 'pending' ? 'bg-secondary text-secondary-foreground' :
-                        quote.status === 'accepted' ? 'bg-primary text-primary-foreground' :
+                        quote.status === 'accepted' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' :
                         'bg-destructive text-destructive-foreground'
                       }`}
                       data-testid={`select-status-${quote.id}`}
