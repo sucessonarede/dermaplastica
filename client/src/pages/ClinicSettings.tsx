@@ -88,13 +88,34 @@ export default function ClinicSettings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-foreground">Configurações da Clínica</h1>
-        <p className="text-muted-foreground">Gerencie informações e configurações da sua clínica</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-foreground">Configurações da Clínica</h1>
+          <p className="text-muted-foreground">Gerencie informações e configurações da sua clínica</p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => form.reset()}
+            data-testid="button-cancel"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="clinic-settings-form"
+            disabled={saveMutation.isPending}
+            data-testid="button-save-settings"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saveMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+          </Button>
+        </div>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form id="clinic-settings-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3 items-start">
             <div className="lg:col-span-2 space-y-6">
               <Card>
@@ -270,25 +291,6 @@ export default function ClinicSettings() {
               </Card>
 
             </div>
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset()}
-              data-testid="button-cancel"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={saveMutation.isPending}
-              data-testid="button-save-settings"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saveMutation.isPending ? "Salvando..." : "Salvar Alterações"}
-            </Button>
           </div>
         </form>
       </Form>
