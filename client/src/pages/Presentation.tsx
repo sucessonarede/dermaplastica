@@ -26,6 +26,9 @@ interface SavedQuote {
   patientId: string;
   total: string;
   discount?: string;
+  discountPercentage?: string;
+  installments?: number;
+  bonusList?: string[];
   status: string;
   createdAt: string;
   notes?: string | null;
@@ -407,13 +410,53 @@ export default function Presentation() {
                 })}
               </div>
               
-              <div className="pt-4 border-t-2">
+              <div className="pt-4 border-t-2 space-y-3">
+                {/* Show subtotal if there's a discount */}
+                {quote.discountPercentage && parseFloat(quote.discountPercentage) > 0 && (
+                  <>
+                    <div className="flex justify-between items-center text-base">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">
+                        R$ {(parseFloat(quote.total) + parseFloat(quote.discount || '0')).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-base">
+                      <span className="text-muted-foreground">Desconto ({parseFloat(quote.discountPercentage).toFixed(0)}%)</span>
+                      <span className="text-destructive">
+                        - R$ {parseFloat(quote.discount || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </>
+                )}
+                
+                {/* Total */}
                 <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold">Investimento Total</span>
+                  <span className="text-xl font-bold">
+                    {quote.installments && quote.installments > 1 ? 'Investimento' : 'Investimento Total'}
+                  </span>
                   <span className="text-3xl font-bold text-primary">
-                    R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {quote.installments && quote.installments > 1 ? (
+                      <>{quote.installments}x R$ {(parseFloat(quote.total) / quote.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                    ) : (
+                      <>R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                    )}
                   </span>
                 </div>
+
+                {/* Bonus List */}
+                {quote.bonusList && quote.bonusList.length > 0 && (
+                  <div className="pt-3 border-t">
+                    <p className="text-sm font-semibold text-muted-foreground mb-2">Bônus Inclusos:</p>
+                    <ul className="space-y-1">
+                      {quote.bonusList.map((bonus, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+                          <span className="text-chart-3 mt-0.5">✓</span>
+                          <span>{bonus}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
