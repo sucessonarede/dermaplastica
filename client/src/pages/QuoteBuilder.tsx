@@ -817,7 +817,7 @@ export default function QuoteBuilder() {
                         </div>
                       )}
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Total do Investimento</span>
+                        <span className="text-sm font-medium text-muted-foreground">Total</span>
                         <span className="text-2xl font-bold text-primary" data-testid="text-total">
                           {installments > 1 ? (
                             <>{installments}x R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
