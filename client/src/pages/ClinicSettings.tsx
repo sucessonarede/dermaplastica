@@ -245,42 +245,6 @@ export default function ClinicSettings() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground">Equipe</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 mb-4">
-                    {["Dra. Juliana Silva", "Dr. Carlos Santos", "Dra. Marina Costa"].map(
-                      (member, index) => (
-                        <div
-                          key={member}
-                          className="flex items-center justify-between rounded-md border p-3"
-                          data-testid={`member-${index + 1}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                              {member.split(" ")[1][0]}
-                            </div>
-                            <div>
-                              <p className="font-medium text-foreground">{member}</p>
-                              <Badge variant="secondary" className="text-xs">
-                                {index === 0 ? "Admin" : "Atendente"}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm" data-testid={`button-edit-member-${index + 1}`}>
-                            Editar
-                          </Button>
-                        </div>
-                      )
-                    )}
-                  </div>
-                  <Button variant="outline" className="w-full" data-testid="button-add-team-member">
-                    Adicionar Membro
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
 
             <div className="space-y-6">
