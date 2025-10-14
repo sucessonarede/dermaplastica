@@ -48,18 +48,20 @@ export const procedures = pgTable("procedures", {
 });
 
 const optionalPositiveNumber = z
-  .union([z.string(), z.number()])
-  .optional()
-  .nullable()
+  .union([z.string(), z.number(), z.null(), z.undefined()])
   .transform((val) => {
-    if (val === "" || val === null || val === undefined) return undefined;
+    // Keep undefined as undefined (field not sent)
+    if (val === undefined) return undefined;
+    // Convert empty string or explicit null to null (field cleared)
+    if (val === "" || val === null) return null;
+    // Parse and validate numbers
     const num = typeof val === 'string' ? parseFloat(val) : val;
     if (isNaN(num as number)) {
       throw new Error("Deve ser um número válido");
     }
     return num;
   })
-  .refine((val) => val === undefined || (typeof val === 'number' && val > 0), {
+  .refine((val) => val === undefined || val === null || (typeof val === 'number' && val > 0), {
     message: "Número deve ser maior que 0",
   });
 

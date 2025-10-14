@@ -485,20 +485,20 @@ export class MemStorage implements IStorage {
 
   async updateProcedure(id: string, updateData: Partial<InsertProcedure>): Promise<Procedure | undefined> {
     const dbData: any = { ...updateData };
-    if (dbData.price !== undefined) {
+    if (dbData.price !== undefined && dbData.price !== null) {
       dbData.price = dbData.price.toString();
     }
     if (dbData.discountedPrice !== undefined) {
-      dbData.discountedPrice = dbData.discountedPrice.toString();
+      dbData.discountedPrice = dbData.discountedPrice !== null ? dbData.discountedPrice.toString() : null;
     }
     if (dbData.mlPrice !== undefined) {
-      dbData.mlPrice = dbData.mlPrice.toString();
+      dbData.mlPrice = dbData.mlPrice !== null ? dbData.mlPrice.toString() : null;
     }
     if (dbData.minMl !== undefined) {
-      dbData.minMl = dbData.minMl.toString();
+      dbData.minMl = dbData.minMl !== null ? dbData.minMl.toString() : null;
     }
     if (dbData.maxMl !== undefined) {
-      dbData.maxMl = dbData.maxMl.toString();
+      dbData.maxMl = dbData.maxMl !== null ? dbData.maxMl.toString() : null;
     }
     
     const [updated] = await db
