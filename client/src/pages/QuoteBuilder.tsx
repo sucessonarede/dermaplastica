@@ -741,11 +741,6 @@ export default function QuoteBuilder() {
                         className="h-9"
                         data-testid="input-installments"
                       />
-                      {installments > 1 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {installments}x de R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                      )}
                     </div>
 
                     {/* Bonus List */}
@@ -824,7 +819,11 @@ export default function QuoteBuilder() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-muted-foreground">Total do Investimento</span>
                         <span className="text-2xl font-bold text-primary" data-testid="text-total">
-                          R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {installments > 1 ? (
+                            <>{installments}x R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                          ) : (
+                            <>R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                          )}
                         </span>
                       </div>
                     </div>
