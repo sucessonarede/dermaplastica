@@ -54,54 +54,7 @@ export default function Reports() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="ring-1 ring-[hsl(var(--primary))]/20">
-          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--primary))]/5 to-transparent">
-            <CardTitle className="flex items-center gap-2 text-[hsl(var(--primary))]">
-              <Users className="h-5 w-5" />
-              Conversão por Atendente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {conversionByAttendant.map((attendant, index) => (
-                <div
-                  key={attendant.name}
-                  className="flex items-center gap-4"
-                  data-testid={`stat-attendant-${index + 1}`}
-                >
-                  <Avatar>
-                    <AvatarFallback className={`${
-                      index % 3 === 0 ? "bg-[hsl(var(--primary))]" :
-                      index % 3 === 1 ? "bg-[hsl(var(--chart-2))]" :
-                      "bg-[hsl(var(--chart-3))]"
-                    } text-primary-foreground`}>
-                      {attendant.name.split(" ")[1].substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium text-foreground">{attendant.name}</p>
-                      <span className="text-sm font-semibold text-primary">
-                        {attendant.rate}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: `${attendant.rate}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {attendant.conversions} de {attendant.quotes} orçamentos
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-6">
         <Card className="ring-1 ring-[hsl(var(--chart-2))]/20">
           <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-2))]/5 to-transparent">
             <CardTitle className="flex items-center gap-2 text-[hsl(var(--primary))]">
