@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -14,25 +15,34 @@ app.use(express.urlencoded({ extended: false }));
 
 // Session store configuration
 const PgStore = connectPg(session);
+const MemoryStore = createMemoryStore(session);
 
 // Session configuration
-app.use(
-  session({
-    store: new PgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
-    }),
-    secret: process.env.SESSION_SECRET || "dermalift-secret-key-change-in-production",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax",
-    },
-  })
-);
+const sessionConfig: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || "dermalift-secret-key-change-in-production",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    sameSite: "lax",
+  },
+};
+
+// Use memorystore in development, PostgreSQL in production
+if (process.env.NODE_ENV === "production") {
+  sessionConfig.store = new PgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+  });
+} else {
+  sessionConfig.store = new MemoryStore({
+    checkPeriod: 86400000, // prune expired entries every 24h
+  });
+}
+
+app.use(session(sessionConfig));
 
 app.use((req, res, next) => {
   const start = Date.now();
