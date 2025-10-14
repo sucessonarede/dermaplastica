@@ -246,6 +246,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports endpoints
+  app.get("/api/reports/metrics", async (req: Request, res: Response) => {
+    try {
+      const metrics = await storage.getReportsMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching reports metrics:", error);
+      res.status(500).json({ error: "Failed to fetch reports metrics" });
+    }
+  });
+
   // Patient routes
   app.get("/api/patients", async (req: Request, res: Response) => {
     try {

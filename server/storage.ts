@@ -36,6 +36,18 @@ export interface DashboardStats {
   acceptedQuotes: number;
 }
 
+export interface TopProcedure {
+  name: string;
+  sales: number;
+  revenue: number;
+}
+
+export interface ReportsMetrics {
+  averageTicket: number;
+  averageDiscount: number;
+  topProcedures: TopProcedure[];
+}
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -52,6 +64,9 @@ export interface IStorage {
   // Dashboard methods
   getDashboardStats(): Promise<DashboardStats>;
   getRecentQuotes(limit?: number): Promise<QuoteWithDetails[]>;
+  
+  // Reports methods
+  getReportsMetrics(): Promise<ReportsMetrics>;
   
   // Patient methods
   getPatients(): Promise<Patient[]>;
@@ -333,6 +348,66 @@ export class MemStorage implements IStorage {
       patient: q.patients!,
       items: itemsByQuote.get(q.quotes.id) || []
     }));
+  }
+
+  async getReportsMetrics(): Promise<ReportsMetrics> {
+    // Get current month date range
+    const now = new Date();
+    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    
+    // Calculate average ticket for this month
+    const avgTicketResult = await db
+      .select({ avg: sql<string>`AVG(CAST(${quotes.total} AS DECIMAL))` })
+      .from(quotes)
+      .where(gte(quotes.createdAt, firstDayThisMonth));
+    
+    const averageTicket = Number(avgTicketResult[0]?.avg || 0);
+    
+    // Calculate average discount for this month (including quotes with 0 discount)
+    const avgDiscountResult = await db
+      .select({ avg: sql<string>`AVG(CAST(${quotes.discount} AS DECIMAL))` })
+      .from(quotes)
+      .where(gte(quotes.createdAt, firstDayThisMonth));
+    
+    const averageDiscount = Number(avgDiscountResult[0]?.avg || 0);
+    
+    // Get top procedures by sales count and revenue
+    const topProceduresResult = await db
+      .select({
+        procedureId: quoteItems.procedureId,
+        sales: sql<number>`COUNT(${quoteItems.id})::int`,
+        revenue: sql<string>`SUM(CAST(${quoteItems.subtotal} AS DECIMAL))`,
+      })
+      .from(quoteItems)
+      .leftJoin(quotes, eq(quoteItems.quoteId, quotes.id))
+      .where(gte(quotes.createdAt, firstDayThisMonth))
+      .groupBy(quoteItems.procedureId)
+      .orderBy(sql`COUNT(${quoteItems.id}) DESC`)
+      .limit(5);
+    
+    // Get procedure names
+    const topProcedures: TopProcedure[] = [];
+    for (const item of topProceduresResult) {
+      const procedure = await db
+        .select()
+        .from(procedures)
+        .where(eq(procedures.id, item.procedureId))
+        .limit(1);
+      
+      if (procedure[0]) {
+        topProcedures.push({
+          name: procedure[0].name,
+          sales: item.sales,
+          revenue: Number(item.revenue || 0),
+        });
+      }
+    }
+    
+    return {
+      averageTicket,
+      averageDiscount,
+      topProcedures,
+    };
   }
 
   async getPatients(): Promise<Patient[]> {
