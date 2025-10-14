@@ -28,7 +28,7 @@ const menuItems = [
     icon: BarChart3,
   },
   {
-    title: "Apresentação",
+    title: "Orçamentos",
     url: "/apresentacao",
     icon: PresentationIcon,
   },
