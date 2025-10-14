@@ -18,6 +18,8 @@ Preferred communication style: Simple, everyday language.
 
 **Application Structure:** Page-based routing (Dashboard, Patients, Quote Builder, Procedures, Reports, Clinic Settings), sidebar navigation, theme provider for light/dark mode, and toast notifications.
 
+**Reports Module:** Real-time analytics dashboard displaying clinic performance metrics. Shows average ticket value, average discount percentage (calculated across ALL quotes including zero-discount ones), and top procedures by sales count and revenue. Data aggregated from quote_items table using SQL GROUP BY operations.
+
 **Quote Builder - Dermalift Protocol:** Patient-centric interface with dialog-based patient selection. Displays four Dermalift pillars (Sustentação, Estruturação, Embelezamento, Revitalização) in a horizontal scrolling layout. Supports interactive procedure selection with unlimited quantity multipliers (no min/max limits) for all procedures, and a discount pricing system with visual indicators. The summary panel displays individual procedure subtotals and total investment value in real-time. Real-time calculation prioritizes custom prices over discounted prices, then mL/base prices. Observations/notes can be added per procedure.
 
 **Presentation Module:** Dynamic, fullscreen presentation accessible via `/apresentacao/:quoteId`, featuring 8 slides detailing the Dermalift methodology. Utilizes Embla Carousel for transitions. Includes a "Personalized Plan" slide displaying patient details, selected procedures with quantities, and total investment, incorporating discounts and per-procedure notes.
