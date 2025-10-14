@@ -357,8 +357,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/procedures/:id", async (req: Request, res: Response) => {
     try {
+      console.log("RAW BODY:", JSON.stringify(req.body, null, 2));
       const updateData = insertProcedureSchema.partial().parse(req.body);
+      console.log("PARSED DATA:", JSON.stringify(updateData, null, 2));
       const procedure = await storage.updateProcedure(req.params.id, updateData);
+      console.log("RETURNED PROCEDURE:", JSON.stringify(procedure, null, 2));
       
       if (!procedure) {
         res.status(404).json({ error: "Procedimento não encontrado" });
@@ -368,6 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(procedure);
     } catch (error: any) {
       if (error.name === "ZodError") {
+        console.log("ZOD ERROR:", error.errors);
         res.status(400).json({ error: "Dados inválidos", details: error.errors });
       } else {
         console.error("Error updating procedure:", error);
