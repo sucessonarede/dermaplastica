@@ -645,9 +645,55 @@ export default function QuoteBuilder() {
                                 )}
                               </div>
                               <div className="text-right">
-                                <p className="font-semibold text-primary" data-testid={`text-subtotal-${procedure.id}`}>
-                                  R$ {calculateSubtotal(procedure).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
+                                {editingPrice === procedure.id ? (
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="Preço"
+                                    className="h-8 w-28 text-right text-sm"
+                                    defaultValue={item?.customPrice || calculateSubtotal(procedure)}
+                                    onBlur={(e) => {
+                                      const value = e.target.value.trim();
+                                      if (value && parseFloat(value) > 0) {
+                                        updateCustomPrice(procedure.id, value);
+                                      } else {
+                                        removeCustomPrice(procedure.id);
+                                      }
+                                      setEditingPrice(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const value = (e.target as HTMLInputElement).value.trim();
+                                        if (value && parseFloat(value) > 0) {
+                                          updateCustomPrice(procedure.id, value);
+                                        } else {
+                                          removeCustomPrice(procedure.id);
+                                        }
+                                        setEditingPrice(null);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingPrice(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                    data-testid={`input-price-${procedure.id}`}
+                                  />
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <p className="font-semibold text-primary" data-testid={`text-subtotal-${procedure.id}`}>
+                                      R$ {calculateSubtotal(procedure).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </p>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-5 w-5"
+                                      onClick={() => setEditingPrice(procedure.id)}
+                                      data-testid={`button-edit-price-${procedure.id}`}
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             
