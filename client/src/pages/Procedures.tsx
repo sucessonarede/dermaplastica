@@ -24,6 +24,7 @@ const protocolLabels: Record<string, string> = {
 
 export default function Procedures() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [protocolFilter, setProtocolFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(null);
   const { toast } = useToast();
@@ -140,9 +141,11 @@ export default function Procedures() {
     setDialogOpen(open);
   };
 
-  const filteredProcedures = procedures.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProcedures = procedures.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesProtocol = protocolFilter === "all" || p.protocol === protocolFilter;
+    return matchesSearch && matchesProtocol;
+  });
 
   if (isLoading) {
     return (
@@ -321,15 +324,29 @@ export default function Procedures() {
         </Dialog>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar procedimento..."
-          className="pl-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-procedure"
-        />
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar procedimento..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            data-testid="input-search-procedure"
+          />
+        </div>
+        <Select value={protocolFilter} onValueChange={setProtocolFilter}>
+          <SelectTrigger className="w-[220px]" data-testid="select-protocol-filter">
+            <SelectValue placeholder="Filtrar por protocolo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Protocolos</SelectItem>
+            <SelectItem value="sustentacao">Sustentação</SelectItem>
+            <SelectItem value="estruturacao">Estruturação</SelectItem>
+            <SelectItem value="embelezamento">Embelezamento</SelectItem>
+            <SelectItem value="revitalizacao">Revitalização</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-3">
