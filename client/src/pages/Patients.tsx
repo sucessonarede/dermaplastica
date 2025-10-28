@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, FileText, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPatientSchema, type InsertPatient, type Patient } from "@shared/schema";
+import { insertPatientSchema, type InsertPatient, type Patient, type Quote } from "@shared/schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,9 +22,14 @@ export default function Patients() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const { data: patients = [], isLoading } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
+  });
+
+  const { data: quotes = [] } = useQuery<Quote[]>({
+    queryKey: ["/api/quotes"],
   });
 
   const form = useForm<InsertPatient>({
@@ -121,6 +127,24 @@ export default function Patients() {
 
   const handleDelete = (patient: Patient) => {
     setDeletingPatient(patient);
+  };
+
+  // Memoize patient-to-quotes mapping for performance
+  const patientQuotesMap = useMemo(() => {
+    const map = new Map<string, Quote[]>();
+    quotes.forEach((quote) => {
+      const existing = map.get(quote.patientId) || [];
+      map.set(quote.patientId, [...existing, quote]);
+    });
+    return map;
+  }, [quotes]);
+
+  const getPatientQuotes = (patientId: string): Quote[] => {
+    return patientQuotesMap.get(patientId) || [];
+  };
+
+  const handleViewQuote = (quoteId: string) => {
+    setLocation(`/apresentacao/${quoteId}`);
   };
 
   const confirmDelete = () => {
@@ -353,6 +377,40 @@ export default function Patients() {
                             {tag}
                           </Badge>
                         ))}
+                      </div>
+                    )}
+                    {getPatientQuotes(patient.id).length > 0 && (
+                      <div className="pt-3 mt-3 border-t border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs font-medium text-muted-foreground">
+                            Orçamentos ({getPatientQuotes(patient.id).length})
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {getPatientQuotes(patient.id).map((quote: any) => (
+                            <Button
+                              key={quote.id}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1 hover-elevate"
+                              onClick={() => handleViewQuote(quote.id)}
+                              data-testid={`button-view-quote-${quote.id}`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {new Date(quote.createdAt).toLocaleDateString('pt-BR', { 
+                                day: '2-digit', 
+                                month: '2-digit',
+                                year: '2-digit'
+                              })}
+                              {quote.total && (
+                                <span className="text-[hsl(var(--primary))] font-semibold">
+                                  · R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              )}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
