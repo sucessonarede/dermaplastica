@@ -386,6 +386,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/procedures/:id", async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteProcedure(req.params.id);
+      
+      if (!success) {
+        res.status(404).json({ error: "Procedimento não encontrado" });
+        return;
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting procedure:", error);
+      res.status(500).json({ error: "Erro ao excluir procedimento" });
+    }
+  });
+
   // Clinic Settings routes
   app.get("/api/clinic-settings", async (req: Request, res: Response) => {
     try {

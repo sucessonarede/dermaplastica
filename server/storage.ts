@@ -81,6 +81,7 @@ export interface IStorage {
   getProcedures(): Promise<Procedure[]>;
   createProcedure(procedure: InsertProcedure): Promise<Procedure>;
   updateProcedure(id: string, procedure: Partial<InsertProcedure>): Promise<Procedure | undefined>;
+  deleteProcedure(id: string): Promise<boolean>;
   
   // Clinic Settings methods
   getClinicSettings(): Promise<ClinicSettings | undefined>;
@@ -509,6 +510,11 @@ export class MemStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  async deleteProcedure(id: string): Promise<boolean> {
+    const result = await db.delete(procedures).where(eq(procedures.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getClinicSettings(): Promise<ClinicSettings | undefined> {

@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Edit, Package } from "lucide-react";
+import { Search, Plus, Edit, Package, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,8 @@ export default function Procedures() {
   const [protocolFilter, setProtocolFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [procedureToDelete, setProcedureToDelete] = useState<Procedure | null>(null);
   const { toast } = useToast();
 
   const { data: procedures = [], isLoading } = useQuery<Procedure[]>({
@@ -97,6 +100,29 @@ export default function Procedures() {
     },
   });
 
+  const deleteProcedureMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/procedures/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/procedures"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/procedures"] });
+      toast({
+        title: "Procedimento excluído!",
+        description: "O procedimento foi removido com sucesso.",
+      });
+      setDeleteDialogOpen(false);
+      setProcedureToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir procedimento",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertProcedure) => {
     if (editingProcedure) {
       updateProcedureMutation.mutate({ id: editingProcedure.id, data });
@@ -139,6 +165,17 @@ export default function Procedures() {
       });
     }
     setDialogOpen(open);
+  };
+
+  const handleDelete = (procedure: Procedure) => {
+    setProcedureToDelete(procedure);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (procedureToDelete) {
+      deleteProcedureMutation.mutate(procedureToDelete.id);
+    }
   };
 
   const filteredProcedures = procedures.filter((p) => {
@@ -401,8 +438,8 @@ export default function Procedures() {
                     )}
                   </div>
 
-                  {/* Edit Button */}
-                  <div className="flex-shrink-0">
+                  {/* Action Buttons */}
+                  <div className="flex-shrink-0 flex gap-1">
                     <Button 
                       size="icon" 
                       variant="ghost" 
@@ -411,6 +448,14 @@ export default function Procedures() {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => handleDelete(procedure)}
+                      data-testid={`button-delete-procedure-${procedure.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -418,6 +463,29 @@ export default function Procedures() {
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o procedimento "{procedureToDelete?.name}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteProcedureMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteProcedureMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
