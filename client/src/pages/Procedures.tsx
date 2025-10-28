@@ -367,16 +367,11 @@ export default function Procedures() {
                     </div>
                   </div>
 
-                  {/* Icon and Protocol */}
+                  {/* Protocol Badge */}
                   <div className="flex-shrink-0">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[hsl(var(--chart-2))]/10">
-                        <Package className="h-4 w-4 text-[hsl(var(--chart-2))]" />
-                      </div>
-                      <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30 text-xs">
-                        {protocolLabels[procedure.protocol]}
-                      </Badge>
-                    </div>
+                    <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
+                      {protocolLabels[procedure.protocol]}
+                    </Badge>
                   </div>
 
                   {/* Info Section */}
