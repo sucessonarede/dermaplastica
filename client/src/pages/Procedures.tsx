@@ -332,67 +332,76 @@ export default function Procedures() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3">
         {filteredProcedures.length === 0 ? (
-          <div className="col-span-full text-center py-12">
+          <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum procedimento encontrado.</p>
             <p className="text-sm text-muted-foreground mt-1">Adicione um procedimento para começar.</p>
           </div>
         ) : (
-          filteredProcedures.map((procedure, index) => (
+          filteredProcedures.map((procedure) => (
             <Card key={procedure.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-3))]/20" data-testid={`card-procedure-${procedure.id}`}>
-              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-md ${
-                    index % 3 === 0 ? "bg-[hsl(var(--primary))]/10" :
-                    index % 3 === 1 ? "bg-[hsl(var(--chart-2))]/10" :
-                    "bg-[hsl(var(--chart-3))]/10"
-                  }`}>
-                    <Package className={`h-4 w-4 ${
-                      index % 3 === 0 ? "text-[hsl(var(--primary))]" :
-                      index % 3 === 1 ? "text-[hsl(var(--chart-2))]" :
-                      "text-[hsl(var(--chart-3))]"
-                    }`} />
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {/* Order Badge */}
+                  <div className="flex-shrink-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-semibold">
+                      {procedure.displayOrder ?? 0}
+                    </div>
                   </div>
-                  <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
-                    {protocolLabels[procedure.protocol]}
-                  </Badge>
-                </div>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  onClick={() => handleEdit(procedure)}
-                  data-testid={`button-edit-procedure-${procedure.id}`}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-foreground">{procedure.name}</h3>
-                  {procedure.description && (
-                    <p className="text-sm text-muted-foreground mt-1">{procedure.description}</p>
-                  )}
-                  {procedure.category && (
-                    <p className="text-sm text-muted-foreground mt-1">{procedure.category}</p>
-                  )}
-                </div>
 
-                <div className="pt-2 border-t">
-                  {procedure.discountedPrice ? (
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground line-through">
+                  {/* Icon and Protocol */}
+                  <div className="flex-shrink-0">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[hsl(var(--chart-2))]/10">
+                        <Package className="h-4 w-4 text-[hsl(var(--chart-2))]" />
+                      </div>
+                      <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30 text-xs">
+                        {protocolLabels[procedure.protocol]}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Info Section */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-lg">{procedure.name}</h3>
+                    {procedure.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{procedure.description}</p>
+                    )}
+                    {procedure.category && (
+                      <p className="text-xs text-muted-foreground mt-1">Categoria: {procedure.category}</p>
+                    )}
+                  </div>
+
+                  {/* Price Section */}
+                  <div className="flex-shrink-0 text-right">
+                    {procedure.discountedPrice ? (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground line-through">
+                          R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xl font-bold text-green-600 dark:text-green-500">
+                          R$ {Number(procedure.discountedPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xl font-bold text-primary">
                         R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-500">
-                        R$ {Number(procedure.discountedPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-bold text-primary">
-                      R$ {Number(procedure.price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  )}
+                    )}
+                  </div>
+
+                  {/* Edit Button */}
+                  <div className="flex-shrink-0">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => handleEdit(procedure)}
+                      data-testid={`button-edit-procedure-${procedure.id}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
