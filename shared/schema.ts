@@ -30,8 +30,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 
-export const dermaliftProtocolEnum = pgEnum("dermalift_protocol", ["sustentacao", "estruturacao", "embelezamento", "revitalizacao"]);
-export const dermaliftProtocols = ["sustentacao", "estruturacao", "embelezamento", "revitalizacao"] as const;
+export const dermaliftProtocolEnum = pgEnum("dermalift_protocol", ["sustentacao", "estruturacao", "embelezamento", "revitalizacao", "alem_da_face"]);
+export const dermaliftProtocols = ["sustentacao", "estruturacao", "embelezamento", "revitalizacao", "alem_da_face"] as const;
 export type DermaliftProtocol = typeof dermaliftProtocols[number];
 
 export const procedures = pgTable("procedures", {

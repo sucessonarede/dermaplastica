@@ -144,6 +144,15 @@ export default function QuoteBuilder() {
       borderColor: "ring-[hsl(var(--chart-4))]/30",
       textColor: "text-[hsl(var(--chart-4))]",
       description: "Qualidade e textura da pele"
+    },
+    alem_da_face: {
+      title: "Além da Face",
+      icon: User,
+      color: "hsl(var(--chart-5))",
+      bgColor: "bg-[hsl(var(--chart-5))]/10",
+      borderColor: "ring-[hsl(var(--chart-5))]/30",
+      textColor: "text-[hsl(var(--chart-5))]",
+      description: "Tratamentos corporais e além do facial"
     }
   };
 

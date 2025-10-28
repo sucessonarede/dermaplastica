@@ -20,7 +20,8 @@ const protocolLabels: Record<string, string> = {
   sustentacao: "Sustentação",
   estruturacao: "Estruturação",
   embelezamento: "Embelezamento",
-  revitalizacao: "Revitalização"
+  revitalizacao: "Revitalização",
+  alem_da_face: "Além da Face"
 };
 
 export default function Procedures() {
@@ -382,6 +383,7 @@ export default function Procedures() {
             <SelectItem value="estruturacao">Estruturação</SelectItem>
             <SelectItem value="embelezamento">Embelezamento</SelectItem>
             <SelectItem value="revitalizacao">Revitalização</SelectItem>
+            <SelectItem value="alem_da_face">Além da Face</SelectItem>
           </SelectContent>
         </Select>
       </div>
