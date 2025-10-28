@@ -367,16 +367,14 @@ export default function Procedures() {
                     </div>
                   </div>
 
-                  {/* Protocol Badge */}
-                  <div className="flex-shrink-0">
-                    <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
-                      {protocolLabels[procedure.protocol]}
-                    </Badge>
-                  </div>
-
                   {/* Info Section */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-lg">{procedure.name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg">{procedure.name}</h3>
+                      <Badge className="bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
+                        {protocolLabels[procedure.protocol]}
+                      </Badge>
+                    </div>
                     {procedure.description && (
                       <p className="text-sm text-muted-foreground mt-1">{procedure.description}</p>
                     )}
