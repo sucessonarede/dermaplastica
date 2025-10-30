@@ -12,6 +12,9 @@ const createQuoteBodySchema = z.object({
   discount: z.number().optional(),
   discountPercentage: z.number().min(0).max(100).optional(),
   installments: z.number().int().min(1).optional(),
+  downPayment: z.number().min(0).optional().refine((val) => val === undefined || val === 0 || !isNaN(val), {
+    message: "Down payment must be a valid number"
+  }),
   bonusList: z.array(z.string()).optional(),
   status: z.string().optional(),
   notes: z.string().optional().nullable(),
@@ -139,12 +142,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const body = createQuoteBodySchema.parse(req.body);
       
+      // Validate downPayment does not exceed total
+      if (body.downPayment !== undefined && body.downPayment > body.total) {
+        res.status(400).json({ error: "Valor de entrada não pode exceder o total" });
+        return;
+      }
+      
       const quoteData = {
         patientId: body.patientId,
         total: body.total,
         discount: body.discount,
         discountPercentage: body.discountPercentage !== undefined ? body.discountPercentage : undefined,
         installments: body.installments || 1,
+        downPayment: body.downPayment,
         bonusList: body.bonusList || [],
         status: body.status || "pending",
         notes: body.notes,
@@ -195,6 +205,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/quotes/:id", async (req: Request, res: Response) => {
     try {
       const updateData = insertQuoteSchema.partial().parse(req.body);
+      
+      // Validate downPayment does not exceed total
+      if (updateData.downPayment !== undefined) {
+        // Get existing quote to check total
+        const existingQuote = await storage.getQuoteById(req.params.id);
+        if (!existingQuote) {
+          res.status(404).json({ error: "Quote not found" });
+          return;
+        }
+        
+        const totalToCheck = updateData.total !== undefined 
+          ? updateData.total 
+          : parseFloat(existingQuote.total);
+        
+        if (updateData.downPayment > totalToCheck) {
+          res.status(400).json({ error: "Valor de entrada não pode exceder o total" });
+          return;
+        }
+      }
+      
       const quote = await storage.updateQuote(req.params.id, updateData);
       
       if (!quote) {

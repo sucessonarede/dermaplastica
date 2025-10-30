@@ -124,6 +124,7 @@ export class MemStorage implements IStorage {
         total: insertQuote.total.toString(),
         discount: insertQuote.discount?.toString(),
         discountPercentage: insertQuote.discountPercentage?.toString(),
+        downPayment: insertQuote.downPayment?.toString(),
       };
       
       // Create quote

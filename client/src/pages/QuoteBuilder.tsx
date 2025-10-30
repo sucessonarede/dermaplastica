@@ -50,6 +50,7 @@ export default function QuoteBuilder() {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const [installments, setInstallments] = useState<number>(1);
+  const [downPayment, setDownPayment] = useState<number>(0);
   const [bonusList, setBonusList] = useState<string[]>([]);
   const [newBonus, setNewBonus] = useState("");
   const { toast } = useToast();
@@ -95,12 +96,15 @@ export default function QuoteBuilder() {
       });
       setSelectedItems(itemsMap);
 
-      // Restore discount, installments and bonus list
+      // Restore discount, installments, down payment and bonus list
       if (loadedQuote.discountPercentage !== undefined && loadedQuote.discountPercentage !== null) {
         setDiscountPercentage(parseFloat(loadedQuote.discountPercentage));
       }
       if (loadedQuote.installments !== undefined && loadedQuote.installments !== null) {
         setInstallments(loadedQuote.installments);
+      }
+      if (loadedQuote.downPayment !== undefined && loadedQuote.downPayment !== null) {
+        setDownPayment(parseFloat(loadedQuote.downPayment));
       }
       if (loadedQuote.bonusList && Array.isArray(loadedQuote.bonusList)) {
         setBonusList(loadedQuote.bonusList);
@@ -274,7 +278,11 @@ export default function QuoteBuilder() {
 
   const discountAmount = (subtotal * discountPercentage) / 100;
   const total = subtotal - discountAmount;
-  const installmentValue = installments > 0 ? total / installments : total;
+  
+  // Clamp downPayment to not exceed total
+  const validDownPayment = Math.min(downPayment, total);
+  const remainingAfterDownPayment = Math.max(0, total - validDownPayment);
+  const installmentValue = installments > 0 ? remainingAfterDownPayment / installments : remainingAfterDownPayment;
 
   const selectedProceduresList = procedures.filter((p) =>
     selectedItems.has(p.id)
@@ -321,6 +329,7 @@ export default function QuoteBuilder() {
         discount: discountAmount,
         discountPercentage,
         installments,
+        downPayment: validDownPayment,
         bonusList,
         status: "pending",
         notes: null,
@@ -863,6 +872,27 @@ export default function QuoteBuilder() {
                         </div>
                       )}
                     </div>
+
+                    {/* Down Payment */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Valor de Entrada (R$)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max={total}
+                        step="0.01"
+                        value={downPayment}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setDownPayment(Math.min(value, total));
+                        }}
+                        placeholder="0,00"
+                        className="h-9"
+                        data-testid="input-down-payment"
+                      />
+                    </div>
                   </div>
 
                   {/* Total Section */}
@@ -884,13 +914,29 @@ export default function QuoteBuilder() {
                           </span>
                         </div>
                       )}
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Total</span>
-                        <span className="text-2xl font-bold text-primary" data-testid="text-total">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground font-medium">Investimento Total</span>
+                        <span className="font-semibold text-foreground" data-testid="text-total">
+                          R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      {downPayment > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Entrada</span>
+                          <span className="text-chart-3" data-testid="text-down-payment-display">
+                            - R$ {downPayment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {downPayment > 0 ? 'Saldo a Pagar' : 'Total a Pagar'}
+                        </span>
+                        <span className="text-2xl font-bold text-primary" data-testid="text-remaining">
                           {installments > 1 ? (
                             <>{installments}x R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
                           ) : (
-                            <>R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                            <>R$ {remainingAfterDownPayment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
                           )}
                         </span>
                       </div>

@@ -36,6 +36,7 @@ interface SavedQuote {
   patientId: string;
   total: string;
   discount?: string;
+  downPayment?: string;
   status: string;
   createdAt: string;
   notes?: string | null;

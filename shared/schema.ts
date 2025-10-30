@@ -113,6 +113,7 @@ export const quotes = pgTable("quotes", {
   discount: decimal("discount", { precision: 10, scale: 2 }),
   discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }),
   installments: integer("installments").default(1),
+  downPayment: decimal("down_payment", { precision: 10, scale: 2 }),
   bonusList: text("bonus_list").array(),
   status: text("status").notNull().default("pending"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -137,6 +138,7 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
   discount: z.union([z.string(), z.number()]).pipe(z.coerce.number()).optional(),
   discountPercentage: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(100)).optional(),
   installments: z.number().int().min(1).optional(),
+  downPayment: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0)).optional(),
   bonusList: z.array(z.string()).optional(),
 });
 

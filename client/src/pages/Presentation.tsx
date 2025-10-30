@@ -28,6 +28,7 @@ interface SavedQuote {
   discount?: string;
   discountPercentage?: string;
   installments?: number;
+  downPayment?: string;
   bonusList?: string[];
   status: string;
   createdAt: string;
@@ -430,16 +431,41 @@ export default function Presentation() {
                 )}
                 
                 {/* Total */}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-base">
+                  <span className="text-muted-foreground font-semibold">Investimento Total</span>
+                  <span className="font-bold text-foreground">
+                    R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                {/* Down Payment */}
+                {quote.downPayment && parseFloat(quote.downPayment) > 0 && (
+                  <div className="flex justify-between items-center text-base">
+                    <span className="text-muted-foreground">Entrada</span>
+                    <span className="text-chart-3">
+                      - R$ {parseFloat(quote.downPayment).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
+
+                {/* Remaining / Installments */}
+                <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-xl font-bold">
-                    {quote.installments && quote.installments > 1 ? 'Investimento' : 'Investimento Total'}
+                    {quote.downPayment && parseFloat(quote.downPayment) > 0 ? 'Saldo a Pagar' : (quote.installments && quote.installments > 1 ? 'Investimento' : 'Investimento Total')}
                   </span>
                   <span className="text-3xl font-bold text-primary">
-                    {quote.installments && quote.installments > 1 ? (
-                      <>{quote.installments}x R$ {(parseFloat(quote.total) / quote.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
-                    ) : (
-                      <>R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
-                    )}
+                    {(() => {
+                      const totalValue = parseFloat(quote.total);
+                      const downPaymentValue = quote.downPayment ? parseFloat(quote.downPayment) : 0;
+                      const remaining = totalValue - downPaymentValue;
+                      const installments = quote.installments || 1;
+                      
+                      return installments > 1 ? (
+                        <>{installments}x R$ {(remaining / installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                      ) : (
+                        <>R$ {remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                      );
+                    })()}
                   </span>
                 </div>
 
