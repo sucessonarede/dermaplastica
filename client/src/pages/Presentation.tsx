@@ -355,63 +355,66 @@ export default function Presentation() {
       id: 6,
       component: (
         <div className="flex flex-col items-center justify-center h-full px-8 py-20">
-          <div className="max-w-4xl space-y-8">
+          <div className="max-w-6xl w-full space-y-8">
             <h2 className="text-4xl font-bold text-center mb-6">
               Seu plano, {quote.patient.name}
             </h2>
-            <Card className="p-8 space-y-6">
-              <div className="space-y-4">
-                {quote.items.map((item, index) => {
-                  const protocolStyles = {
-                    sustentacao: "bg-primary/10",
-                    estruturacao: "bg-[hsl(var(--chart-2))]/10", 
-                    embelezamento: "bg-[hsl(var(--chart-3))]/10",
-                    revitalizacao: "bg-[hsl(var(--chart-4))]/10",
-                  };
-                  const badgeStyle = protocolStyles[item.procedure.protocol];
-                  
-                  return (
-                    <div key={item.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className={`w-8 h-8 rounded-full ${badgeStyle} flex items-center justify-center flex-shrink-0`}>
-                          <span className="text-sm font-bold">{index + 1}</span>
+            <Card className="p-8">
+              <div className="grid grid-cols-2 gap-8">
+                {/* Left Column - Procedures List */}
+                <div className="space-y-2">
+                  {quote.items.map((item, index) => {
+                    const protocolStyles = {
+                      sustentacao: "bg-primary/10",
+                      estruturacao: "bg-[hsl(var(--chart-2))]/10", 
+                      embelezamento: "bg-[hsl(var(--chart-3))]/10",
+                      revitalizacao: "bg-[hsl(var(--chart-4))]/10",
+                    };
+                    const badgeStyle = protocolStyles[item.procedure.protocol];
+                    
+                    return (
+                      <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className={`w-6 h-6 rounded-full ${badgeStyle} flex items-center justify-center flex-shrink-0`}>
+                            <span className="text-xs font-bold">{index + 1}</span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{item.procedure.name}</p>
+                            {parseFloat(item.quantity) > 1 && (
+                              <p className="text-xs text-muted-foreground">
+                                {parseFloat(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} ml
+                              </p>
+                            )}
+                            {item.note && (
+                              <p className="text-xs text-muted-foreground italic">
+                                {item.note}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{item.procedure.name}</p>
-                          {parseFloat(item.quantity) > 1 && (
-                            <p className="text-xs text-muted-foreground">
-                              {parseFloat(item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} ml
-                            </p>
-                          )}
-                          {item.note && (
-                            <p className="text-sm text-muted-foreground italic mt-1">
-                              {item.note}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end flex-shrink-0 ml-4">
-                        {(item.procedure as any).discountedPrice ? (
-                          <>
-                            <p className="text-sm text-muted-foreground line-through">
-                              R$ {(parseFloat(item.procedure.price) * parseFloat(item.quantity)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                            <p className="font-semibold text-xl text-green-600 dark:text-green-500">
+                        <div className="flex flex-col items-end flex-shrink-0 ml-3">
+                          {(item.procedure as any).discountedPrice ? (
+                            <>
+                              <p className="text-xs text-muted-foreground line-through">
+                                R$ {(parseFloat(item.procedure.price) * parseFloat(item.quantity)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className="font-semibold text-base text-green-600 dark:text-green-500">
+                                R$ {parseFloat(item.subtotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="font-semibold text-sm">
                               R$ {parseFloat(item.subtotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
-                          </>
-                        ) : (
-                          <p className="font-semibold text-lg">
-                            R$ {parseFloat(item.subtotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              <div className="pt-4 border-t-2 space-y-3">
+                    );
+                  })}
+                </div>
+
+                {/* Right Column - Financial Summary */}
+                <div className="space-y-3 border-l pl-8">
                 {/* Show subtotal if there's a discount */}
                 {quote.discountPercentage && parseFloat(quote.discountPercentage) > 0 && (
                   <>
@@ -483,6 +486,7 @@ export default function Presentation() {
                     </ul>
                   </div>
                 )}
+                </div>
               </div>
             </Card>
           </div>
