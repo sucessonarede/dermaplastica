@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logoImage from "@assets/Sem título-1_1762275058082.png";
 
 type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
 
@@ -174,7 +175,7 @@ export default function Presentation() {
     acceptQuoteMutation.mutate();
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     if (!quote) return;
 
     const doc = new jsPDF({
@@ -193,7 +194,42 @@ export default function Presentation() {
 
     const terracottaColor: [number, number, number] = [139, 69, 19];
     const pageWidth = doc.internal.pageSize.getWidth();
-    let yPos = 20;
+    let yPos = 15;
+
+    // Convert logo to data URL for jsPDF
+    const loadImageAsDataURL = (src: string): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          } else {
+            reject(new Error("Failed to get canvas context"));
+          }
+        };
+        img.onerror = reject;
+        img.src = src;
+      });
+    };
+
+    // Load and add logo at the top
+    try {
+      const logoDataURL = await loadImageAsDataURL(logoImage);
+      const logoWidth = 100;
+      const logoHeight = 20;
+      const logoX = (pageWidth - logoWidth) / 2;
+      doc.addImage(logoDataURL, 'PNG', logoX, yPos, logoWidth, logoHeight);
+      yPos += logoHeight + 10;
+    } catch (error) {
+      console.error("Failed to load logo:", error);
+      // Continue without logo if it fails
+    }
 
     doc.setFontSize(18);
     doc.setTextColor(terracottaColor[0], terracottaColor[1], terracottaColor[2]);
@@ -255,9 +291,9 @@ export default function Presentation() {
         halign: "center"
       },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 80 },
-        2: { cellWidth: 40, halign: "right" }
+        0: { cellWidth: 55 },
+        1: { cellWidth: 75 },
+        2: { cellWidth: 38, halign: "right" }
       }
     });
 
