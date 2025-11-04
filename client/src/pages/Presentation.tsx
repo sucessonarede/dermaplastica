@@ -14,7 +14,8 @@ import {
   Users,
   ArrowRight,
   X,
-  Check
+  Check,
+  Download
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import useEmblaCarousel from "embla-carousel-react";
@@ -22,6 +23,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
 
@@ -169,6 +172,155 @@ export default function Presentation() {
 
   const handleAcceptQuote = () => {
     acceptQuoteMutation.mutate();
+  };
+
+  const generatePDF = () => {
+    if (!quote) return;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const protocolNames: Record<string, string> = {
+      "sustentacao": "Sustentação",
+      "estruturacao": "Estruturação",
+      "embelezamento": "Embelezamento",
+      "revitalizacao": "Revitalização e Pele",
+      "alem_da_face": "Além da Face"
+    };
+
+    const terracottaColor: [number, number, number] = [139, 69, 19];
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPos = 20;
+
+    doc.setFontSize(18);
+    doc.setTextColor(terracottaColor[0], terracottaColor[1], terracottaColor[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text("Projeto Dermalift", pageWidth / 2, yPos, { align: "center" });
+
+    yPos += 15;
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Paciente: ${quote.patient.name}`, 15, yPos);
+
+    yPos += 10;
+
+    const groupedByProtocol: Record<string, typeof quote.items> = {};
+    quote.items.forEach(item => {
+      const protocol = item.procedure.protocol;
+      if (!groupedByProtocol[protocol]) {
+        groupedByProtocol[protocol] = [];
+      }
+      groupedByProtocol[protocol].push(item);
+    });
+
+    const tableData: any[] = [];
+    const protocolOrder = ["sustentacao", "estruturacao", "embelezamento", "revitalizacao", "alem_da_face"];
+
+    protocolOrder.forEach(protocol => {
+      if (groupedByProtocol[protocol]) {
+        tableData.push([
+          { content: protocolNames[protocol], colSpan: 3, styles: { fontStyle: "bold", fillColor: [245, 245, 245] } }
+        ]);
+
+        groupedByProtocol[protocol].forEach(item => {
+          const quantity = parseFloat(item.quantity);
+          const subtotal = parseFloat(item.subtotal);
+
+          const serviceName = quantity > 1 ? `${quantity}. ${item.procedure.name}` : item.procedure.name;
+          const description = item.note || "";
+          const valueText = `R$ ${subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+          tableData.push([serviceName, description, valueText]);
+        });
+      }
+    });
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["SERVIÇO", "DESCRIÇÃO", "VALOR"]],
+      body: tableData,
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: terracottaColor,
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center"
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 40, halign: "right" }
+      }
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 10;
+
+    const total = parseFloat(quote.total);
+    const discountAmount = quote.discount ? parseFloat(quote.discount) : 0;
+    const discountPercentage = quote.discountPercentage ? parseFloat(quote.discountPercentage) : 0;
+    const subtotal = total + discountAmount;
+    const downPayment = quote.downPayment ? parseFloat(quote.downPayment) : 0;
+    const remainingBalance = total - downPayment;
+    const installmentValue = quote.installments && quote.installments > 0 
+      ? remainingBalance / quote.installments 
+      : 0;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    
+    if (discountPercentage > 0) {
+      doc.text(`TOTAL DOS TRATAMENTOS AVULSOS: R$ ${subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 15, yPos);
+      yPos += 7;
+      doc.text(`DESCONTO ${discountPercentage.toFixed(1)}%: R$ ${discountAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 15, yPos);
+      yPos += 7;
+    }
+
+    doc.text(`TOTAL: R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 15, yPos);
+    yPos += 7;
+
+    if (downPayment > 0) {
+      doc.text(`ENTRADA: R$ ${downPayment.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 15, yPos);
+      yPos += 7;
+    }
+
+    if (quote.installments && quote.installments > 0) {
+      doc.text(`${quote.installments} X R$ ${installmentValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 15, yPos);
+      yPos += 7;
+    }
+
+    if (quote.bonusList && quote.bonusList.length > 0) {
+      yPos += 5;
+      doc.setFont("helvetica", "bold");
+      doc.text("BÔNUS:", 15, yPos);
+      yPos += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      quote.bonusList.forEach((bonus) => {
+        doc.text(`• ${bonus}`, 15, yPos);
+        yPos += 5;
+      });
+    }
+
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONDIÇÕES E PAGAMENTOS", 15, yPos);
+    yPos += 7;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("Este orçamento é válido por 30 dias.", 15, yPos);
+    yPos += 5;
+    doc.text("Pagamento no cartão.", 15, yPos);
+
+    doc.save(`Orcamento_${quote.patient.name.replace(/\s/g, "_")}.pdf`);
   };
 
   if (isLoading) {
@@ -632,9 +784,16 @@ export default function Presentation() {
                 )}
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-8">
-              Agende uma avaliação gratuita e descubra qual o melhor protocolo para você
-            </p>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={generatePDF}
+              className="mt-8"
+              data-testid="button-download-pdf"
+            >
+              <Download className="mr-2 h-5 w-5" />
+              Baixar Orçamento PDF
+            </Button>
           </div>
         </div>
       )
