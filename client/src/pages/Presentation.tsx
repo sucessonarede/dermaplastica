@@ -13,11 +13,15 @@ import {
   Star,
   Users,
   ArrowRight,
-  X
+  X,
+  Check
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import useEmblaCarousel from "embla-carousel-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import confetti from "canvas-confetti";
 
 type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
 
@@ -105,8 +109,66 @@ export default function Presentation() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  const { toast } = useToast();
+
+  const acceptQuoteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("PUT", `/api/quotes/${quoteId}`, { status: "accepted" });
+    },
+    onSuccess: () => {
+      // Trigger confetti animation
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100000 };
+
+      function randomInRange(min: number, max: number) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval: NodeJS.Timeout = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+        });
+      }, 250);
+
+      toast({
+        title: "Orçamento aceito! 🎉",
+        description: "Obrigado por confiar em nossos serviços!",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes", quoteId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao aceitar orçamento",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const goToQuoteBuilder = () => {
     setLocation("/protocolo-dermalift");
+  };
+
+  const handleAcceptQuote = () => {
+    acceptQuoteMutation.mutate();
   };
 
   if (isLoading) {
@@ -553,11 +615,21 @@ export default function Presentation() {
               <Button 
                 size="lg" 
                 className="text-lg px-8 py-6"
-                onClick={goToQuoteBuilder}
-                data-testid="button-start-protocol"
+                onClick={handleAcceptQuote}
+                disabled={acceptQuoteMutation.isPending || quote.status === "accepted"}
+                data-testid="button-accept-quote"
               >
-                Montar meu Orçamento
-                <ArrowRight className="ml-2 h-5 w-5" />
+                {quote.status === "accepted" ? (
+                  <>
+                    <Check className="mr-2 h-5 w-5" />
+                    Orçamento Aceito
+                  </>
+                ) : (
+                  <>
+                    Sim, eu quero! 
+                    <Check className="ml-2 h-5 w-5" />
+                  </>
+                )}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-8">

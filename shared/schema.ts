@@ -140,6 +140,7 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
   installments: z.number().int().min(1).optional(),
   downPayment: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0)).optional(),
   bonusList: z.array(z.string()).optional(),
+  status: z.enum(["pending", "accepted", "rejected"]).optional(),
 });
 
 export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({

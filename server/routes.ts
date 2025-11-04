@@ -156,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         installments: body.installments || 1,
         downPayment: body.downPayment,
         bonusList: body.bonusList || [],
-        status: body.status || "pending",
+        status: (body.status || "pending") as "pending" | "accepted" | "rejected",
         notes: body.notes,
       };
       
