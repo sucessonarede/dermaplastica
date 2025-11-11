@@ -27,6 +27,39 @@ const createQuoteBodySchema = z.object({
   })).min(1, "At least one item is required"),
 });
 
+// Schema for patient filters query parameters
+const patientsQuerySchema = z.object({
+  search: z.string().optional(),
+  createdFrom: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: "Data inicial inválida"
+  }),
+  createdTo: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: "Data final inválida"
+  }),
+  minBudget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).optional(),
+  maxBudget: z.union([z.string(), z.number()]).pipe(z.coerce.number()).optional(),
+  origins: z.union([z.string(), z.array(z.string())]).transform(val => 
+    Array.isArray(val) ? val : val ? [val] : undefined
+  ).optional(),
+  cities: z.union([z.string(), z.array(z.string())]).transform(val => 
+    Array.isArray(val) ? val : val ? [val] : undefined
+  ).optional(),
+  tags: z.union([z.string(), z.array(z.string())]).transform(val => 
+    Array.isArray(val) ? val : val ? [val] : undefined
+  ).optional(),
+  hasQuotes: z.union([z.string(), z.boolean()]).transform(val => 
+    typeof val === 'string' ? val === 'true' : val
+  ).optional(),
+}).refine(data => {
+  if (data.minBudget !== undefined && data.maxBudget !== undefined) {
+    return data.minBudget <= data.maxBudget;
+  }
+  return true;
+}, {
+  message: "minBudget deve ser menor ou igual a maxBudget",
+  path: ["minBudget"],
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // prefix all routes with /api
 
@@ -296,9 +329,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patient routes
   app.get("/api/patients", async (req: Request, res: Response) => {
     try {
-      const patients = await storage.getPatients();
+      // Parse and validate query parameters
+      const filters = patientsQuerySchema.parse(req.query);
+      
+      // Get patients with applied filters
+      const patients = await storage.getPatients(filters);
+      
       res.json(patients);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Parâmetros de filtro inválidos", details: error.errors });
+        return;
+      }
       console.error("Error fetching patients:", error);
       res.status(500).json({ error: "Erro ao buscar pacientes" });
     }

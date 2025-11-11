@@ -51,6 +51,25 @@ export interface ReportsMetrics {
   topProcedures: TopProcedure[];
 }
 
+export interface PatientFilters {
+  search?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  minBudget?: number;
+  maxBudget?: number;
+  origins?: string[];
+  cities?: string[];
+  tags?: string[];
+  hasQuotes?: boolean;
+}
+
+export interface PatientWithStats extends Patient {
+  quoteCount: number;
+  totalBudget: number;
+  acceptedBudget: number;
+  lastQuoteDate?: string;
+}
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -72,7 +91,7 @@ export interface IStorage {
   getReportsMetrics(): Promise<ReportsMetrics>;
   
   // Patient methods
-  getPatients(): Promise<Patient[]>;
+  getPatients(filters?: PatientFilters): Promise<PatientWithStats[]>;
   createPatient(patient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient>;
   updatePatient(id: string, patient: Partial<Omit<Patient, 'id'>>): Promise<Patient | undefined>;
   deletePatient(id: string): Promise<boolean>;
@@ -447,8 +466,115 @@ export class MemStorage implements IStorage {
     };
   }
 
-  async getPatients(): Promise<Patient[]> {
-    return await db.select().from(patients).orderBy(patients.name);
+  async getPatients(filters?: PatientFilters): Promise<PatientWithStats[]> {
+    // Build base query with aggregations
+    const baseQuery = db
+      .select({
+        id: patients.id,
+        name: patients.name,
+        phone: patients.phone,
+        email: patients.email,
+        cpf: patients.cpf,
+        birthDate: patients.birthDate,
+        address: patients.address,
+        city: patients.city,
+        state: patients.state,
+        origin: patients.origin,
+        tags: patients.tags,
+        createdAt: patients.createdAt,
+        quoteCount: sql<number>`CAST(COUNT(DISTINCT ${quotes.id}) AS INTEGER)`,
+        totalBudget: sql<number>`COALESCE(SUM(CAST(${quotes.total} AS DECIMAL)), 0)`,
+        acceptedBudget: sql<number>`COALESCE(SUM(CASE WHEN ${quotes.status} = 'accepted' THEN CAST(${quotes.total} AS DECIMAL) ELSE 0 END), 0)`,
+        lastQuoteDate: sql<string>`MAX(${quotes.createdAt})`,
+      })
+      .from(patients)
+      .leftJoin(quotes, eq(patients.id, quotes.patientId))
+      .groupBy(
+        patients.id,
+        patients.name,
+        patients.phone,
+        patients.email,
+        patients.cpf,
+        patients.birthDate,
+        patients.address,
+        patients.city,
+        patients.state,
+        patients.origin,
+        patients.tags,
+        patients.createdAt
+      );
+
+    // Apply filters if provided
+    const conditions: any[] = [];
+
+    if (filters?.search) {
+      conditions.push(sql`${patients.name} ILIKE ${`%${filters.search}%`}`);
+    }
+
+    if (filters?.createdFrom) {
+      conditions.push(gte(patients.createdAt, filters.createdFrom));
+    }
+
+    if (filters?.createdTo) {
+      const toDate = new Date(filters.createdTo);
+      toDate.setHours(23, 59, 59, 999);
+      conditions.push(sql`${patients.createdAt} <= ${toDate.toISOString()}`);
+    }
+
+    if (filters?.origins && filters.origins.length > 0) {
+      conditions.push(inArray(patients.origin, filters.origins));
+    }
+
+    if (filters?.cities && filters.cities.length > 0) {
+      conditions.push(inArray(patients.city, filters.cities));
+    }
+
+    if (filters?.tags && filters.tags.length > 0) {
+      const tagConditions = filters.tags.map(tag => sql`${patients.tags} @> ARRAY[${tag}]::text[]`);
+      conditions.push(sql`(${sql.join(tagConditions, sql` OR `)})`);
+    }
+
+    // Execute query with conditions
+    let query = baseQuery;
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const results = await query.orderBy(desc(patients.createdAt));
+
+    // Apply budget and quote filters after aggregation
+    let filteredResults = results.map(r => ({
+      id: r.id,
+      name: r.name,
+      phone: r.phone,
+      email: r.email,
+      cpf: r.cpf,
+      birthDate: r.birthDate,
+      address: r.address,
+      city: r.city,
+      state: r.state,
+      origin: r.origin,
+      tags: r.tags,
+      createdAt: r.createdAt,
+      quoteCount: Number(r.quoteCount),
+      totalBudget: Number(r.totalBudget),
+      acceptedBudget: Number(r.acceptedBudget),
+      lastQuoteDate: r.lastQuoteDate,
+    }));
+
+    if (filters?.minBudget !== undefined && filters.minBudget > 0) {
+      filteredResults = filteredResults.filter(p => p.totalBudget >= filters.minBudget!);
+    }
+
+    if (filters?.maxBudget !== undefined && filters.maxBudget > 0) {
+      filteredResults = filteredResults.filter(p => p.totalBudget <= filters.maxBudget!);
+    }
+
+    if (filters?.hasQuotes !== undefined) {
+      filteredResults = filteredResults.filter(p => filters.hasQuotes ? p.quoteCount > 0 : p.quoteCount === 0);
+    }
+
+    return filteredResults;
   }
 
   async createPatient(insertPatient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient> {

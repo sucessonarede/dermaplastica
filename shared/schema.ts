@@ -93,10 +93,12 @@ export const patients = pgTable("patients", {
   state: text("state"),
   origin: text("origin"),
   tags: text("tags").array(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
+  createdAt: true,
 }).extend({
   name: z.string().min(1, "Nome é obrigatório"),
   phone: z.string().optional(),
@@ -180,3 +182,10 @@ export const insertClinicSettingsSchema = createInsertSchema(clinicSettings).omi
 
 export type InsertClinicSettings = z.infer<typeof insertClinicSettingsSchema>;
 export type ClinicSettings = typeof clinicSettings.$inferSelect;
+
+export interface PatientWithStats extends Patient {
+  quoteCount: number;
+  totalBudget: number;
+  acceptedBudget: number;
+  lastQuoteDate?: string;
+}

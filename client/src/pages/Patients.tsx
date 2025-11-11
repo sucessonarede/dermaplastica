@@ -2,29 +2,54 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, FileText, ExternalLink } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, FileText, ExternalLink, Filter, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPatientSchema, type InsertPatient, type Patient, type Quote } from "@shared/schema";
+import { insertPatientSchema, type InsertPatient, type Patient, type Quote, type PatientWithStats } from "@shared/schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { Card } from "@/components/ui/card";
 
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
-  const { toast } = useToast();
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    createdFrom: "",
+    createdTo: "",
+    minBudget: "",
+    maxBudget: "",
+  });
+  const { toast} = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: patients = [], isLoading } = useQuery<Patient[]>({
-    queryKey: ["/api/patients"],
+  // Build query parameters from filters and search
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("search", searchTerm);
+    if (filters.createdFrom) params.append("createdFrom", filters.createdFrom);
+    if (filters.createdTo) params.append("createdTo", filters.createdTo);
+    if (filters.minBudget) params.append("minBudget", filters.minBudget);
+    if (filters.maxBudget) params.append("maxBudget", filters.maxBudget);
+    return params.toString();
+  }, [filters, searchTerm]);
+
+  const { data: patients = [], isLoading } = useQuery<PatientWithStats[]>({
+    queryKey: ["/api/patients", queryParams],
+    queryFn: async () => {
+      const url = queryParams ? `/api/patients?${queryParams}` : "/api/patients";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch patients");
+      return await res.json();
+    },
   });
 
   const { data: quotes = [] } = useQuery<Quote[]>({
@@ -160,10 +185,6 @@ export default function Patients() {
     }
   };
 
-  const filteredPatients = patients.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -289,25 +310,109 @@ export default function Patients() {
         </Dialog>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar paciente..."
-          className="pl-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-patient"
-        />
+      <div className="space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar paciente..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            data-testid="input-search-patient"
+          />
+        </div>
+
+        {showFilters && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtros
+              </h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowFilters(false)}
+                data-testid="button-close-filters"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Data Início</label>
+                <Input
+                  type="date"
+                  value={filters.createdFrom}
+                  onChange={(e) => setFilters({ ...filters, createdFrom: e.target.value })}
+                  data-testid="input-filter-date-from"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Data Fim</label>
+                <Input
+                  type="date"
+                  value={filters.createdTo}
+                  onChange={(e) => setFilters({ ...filters, createdTo: e.target.value })}
+                  data-testid="input-filter-date-to"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Valor Mínimo (R$)</label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={filters.minBudget}
+                  onChange={(e) => setFilters({ ...filters, minBudget: e.target.value })}
+                  data-testid="input-filter-min-budget"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Valor Máximo (R$)</label>
+                <Input
+                  type="number"
+                  placeholder="10000"
+                  value={filters.maxBudget}
+                  onChange={(e) => setFilters({ ...filters, maxBudget: e.target.value })}
+                  data-testid="input-filter-max-budget"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end mt-4 gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFilters({ createdFrom: "", createdTo: "", minBudget: "", maxBudget: "" })}
+                data-testid="button-clear-filters"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {!showFilters && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowFilters(true)}
+            data-testid="button-show-filters"
+            className="w-full md:w-auto"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Mostrar Filtros
+          </Button>
+        )}
       </div>
 
       <div className="space-y-2">
-        {filteredPatients.length === 0 ? (
+        {patients.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum paciente encontrado.</p>
             <p className="text-sm text-muted-foreground mt-1">Adicione um paciente para começar.</p>
           </div>
         ) : (
-          filteredPatients.map((patient, index) => (
+          patients.map((patient, index) => (
             <div
               key={patient.id}
               className="flex items-center gap-4 p-4 rounded-md border border-border hover-elevate group"
