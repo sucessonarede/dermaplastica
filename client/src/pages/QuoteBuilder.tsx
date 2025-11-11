@@ -342,17 +342,23 @@ export default function QuoteBuilder() {
         installments,
         downPayment: validDownPayment,
         bonusList,
-        status: "pending",
+        status: loadedQuote?.status || "pending",
         notes: null,
         items,
       };
 
-      const res = await apiRequest("POST", "/api/quotes", quoteData);
+      // Se está editando um orçamento existente, usa PUT. Caso contrário, usa POST
+      const isEditing = !!loadQuoteId;
+      const method = isEditing ? "PUT" : "POST";
+      const endpoint = isEditing ? `/api/quotes/${loadQuoteId}` : "/api/quotes";
+      
+      const res = await apiRequest(method, endpoint, quoteData);
       return await res.json();
     },
     onSuccess: (data) => {
+      const isEditing = !!loadQuoteId;
       toast({
-        title: "Orçamento salvo!",
+        title: isEditing ? "Orçamento atualizado!" : "Orçamento salvo!",
         description: "Abrindo apresentação...",
       });
       // Invalidar cache para recarregar todas as telas
