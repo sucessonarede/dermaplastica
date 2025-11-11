@@ -424,7 +424,7 @@ export default function Patients() {
                   index % 3 === 1 ? "bg-[hsl(var(--chart-2))]" :
                   "bg-[hsl(var(--chart-3))]"
                 } text-primary-foreground text-base`}>
-                  {patient.name.split(" ").map(n => n[0]).join("")}
+                  {patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
                 </AvatarFallback>
               </Avatar>
               
