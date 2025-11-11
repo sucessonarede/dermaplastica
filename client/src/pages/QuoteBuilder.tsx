@@ -33,6 +33,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { type Procedure, type DermaliftProtocol, type Patient } from "@shared/schema";
+import { generateQuotePDF } from "@/lib/generateQuotePDF";
 
 interface SelectedItem {
   quantity: number;
@@ -380,6 +381,52 @@ export default function QuoteBuilder() {
 
   const handleSaveQuote = () => {
     saveQuoteMutation.mutate();
+  };
+
+  const handleDownloadPDF = () => {
+    if (!selectedPatient || selectedProceduresList.length === 0) {
+      toast({
+        title: "Não é possível gerar PDF",
+        description: "Selecione um paciente e procedimentos primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const items = selectedProceduresList.map(proc => {
+      const item = selectedItems.get(proc.id)!;
+      const subtotal = calculateSubtotal(proc);
+      
+      return {
+        quantity: item.quantity.toString(),
+        subtotal: subtotal.toString(),
+        note: item.note,
+        procedure: {
+          name: proc.name,
+          protocol: proc.protocol,
+        },
+      };
+    });
+
+    const quoteData = {
+      patient: {
+        name: selectedPatient.name,
+      },
+      items,
+      total: total.toString(),
+      discount: discountAmount > 0 ? discountAmount.toString() : undefined,
+      discountPercentage: discountPercentage > 0 ? discountPercentage.toString() : undefined,
+      installments: installments > 1 ? installments : undefined,
+      downPayment: validDownPayment > 0 ? validDownPayment.toString() : undefined,
+      bonusList: bonusList.length > 0 ? bonusList : undefined,
+    };
+
+    generateQuotePDF(quoteData);
+    
+    toast({
+      title: "PDF gerado com sucesso!",
+      description: "O arquivo foi baixado para seu computador.",
+    });
   };
 
   return (
@@ -960,7 +1007,7 @@ export default function QuoteBuilder() {
                     </div>
                   </div>
 
-                  <div className="border-t pt-4">
+                  <div className="border-t pt-4 space-y-2">
                     <Button
                       className="w-full bg-gradient-to-r from-primary to-chart-2 hover:opacity-90"
                       disabled={!selectedPatient || selectedProceduresList.length === 0 || saveQuoteMutation.isPending}
@@ -969,6 +1016,17 @@ export default function QuoteBuilder() {
                     >
                       <Save className="h-4 w-4 mr-2" />
                       {saveQuoteMutation.isPending ? "Salvando..." : "Salvar e Apresentar"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground hover:text-foreground"
+                      disabled={!selectedPatient || selectedProceduresList.length === 0}
+                      onClick={handleDownloadPDF}
+                      data-testid="button-download-pdf"
+                    >
+                      <Download className="h-3 w-3 mr-1.5" />
+                      Baixar PDF
                     </Button>
                   </div>
                 </>
