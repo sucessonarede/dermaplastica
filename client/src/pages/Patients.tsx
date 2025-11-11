@@ -358,7 +358,7 @@ export default function Patients() {
                       data-testid={`button-new-protocol-${patient.id}`}
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Novo Protocolo
+                      Protocolo
                     </Button>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
