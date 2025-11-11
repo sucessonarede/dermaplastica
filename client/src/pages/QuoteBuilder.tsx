@@ -65,15 +65,26 @@ export default function QuoteBuilder() {
     queryKey: ["/api/patients"],
   });
 
-  // Get loadQuote parameter from URL
+  // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const loadQuoteId = urlParams.get('loadQuote');
+  const preselectedPatientId = urlParams.get('patient');
 
   // Load quote data if loadQuote parameter exists
   const { data: loadedQuote } = useQuery<any>({
     queryKey: ['/api/quotes', loadQuoteId],
     enabled: !!loadQuoteId,
   });
+
+  // Pre-select patient from URL parameter
+  useEffect(() => {
+    if (preselectedPatientId && patients.length > 0 && !selectedPatient) {
+      const patient = patients.find(p => p.id.toString() === preselectedPatientId);
+      if (patient) {
+        setSelectedPatient(patient);
+      }
+    }
+  }, [preselectedPatientId, patients, selectedPatient]);
 
   // Populate form when quote is loaded
   useEffect(() => {

@@ -349,25 +349,37 @@ export default function Patients() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1">
                     <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => handleEdit(patient)}
-                      data-testid={`button-edit-patient-${patient.id}`}
+                      size="sm"
+                      variant="default"
+                      className="h-8"
+                      onClick={() => setLocation(`/protocolo-dermalift?patient=${patient.id}`)}
+                      data-testid={`button-new-protocol-${patient.id}`}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4 mr-1" />
+                      Novo Protocolo
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(patient)}
-                      data-testid={`button-delete-patient-${patient.id}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => handleEdit(patient)}
+                        data-testid={`button-edit-patient-${patient.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(patient)}
+                        data-testid={`button-delete-patient-${patient.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 
