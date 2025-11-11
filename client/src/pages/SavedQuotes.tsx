@@ -295,7 +295,7 @@ export default function SavedQuotes() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {quote.patient.name.split(" ").map(n => n[0]).join("")}
+                        {quote.patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div>

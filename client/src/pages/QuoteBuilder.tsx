@@ -428,7 +428,7 @@ export default function QuoteBuilder() {
                   >
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {patient.name.split(" ").map(n => n[0]).join("")}
+                        {patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -453,7 +453,7 @@ export default function QuoteBuilder() {
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12">
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {selectedPatient.name.split(" ").map((n: string) => n[0]).join("")}
+                  {selectedPatient.name.split(" ").slice(0, 2).map((n: string) => n[0]).join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
