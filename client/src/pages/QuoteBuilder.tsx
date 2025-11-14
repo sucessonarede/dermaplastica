@@ -26,7 +26,8 @@ import {
   Save,
   FileText,
   Download,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -78,7 +79,7 @@ export default function QuoteBuilder() {
   }, [location]); // Re-compute when location changes
 
   // Load quote data if loadQuote parameter exists
-  const { data: loadedQuote } = useQuery<any>({
+  const { data: loadedQuote, isLoading: isLoadingQuote } = useQuery<any>({
     queryKey: ['/api/quotes', loadQuoteId],
     enabled: !!loadQuoteId,
   });
@@ -481,6 +482,16 @@ export default function QuoteBuilder() {
       description: "O arquivo foi baixado para seu computador.",
     });
   };
+
+  // Show loading spinner while quote is being loaded
+  if (loadQuoteId && isLoadingQuote) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando orçamento...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
