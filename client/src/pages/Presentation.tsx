@@ -103,8 +103,8 @@ export default function Presentation() {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "ArrowLeft") scrollPrev();
     if (e.key === "ArrowRight") scrollNext();
-    if (e.key === "Escape") setLocation("/protocolo-dermalift");
-  }, [scrollPrev, scrollNext, setLocation]);
+    if (e.key === "Escape") setLocation(`/protocolo-dermalift?loadQuoteId=${quoteId}`);
+  }, [scrollPrev, scrollNext, setLocation, quoteId]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -166,7 +166,7 @@ export default function Presentation() {
   });
 
   const goToQuoteBuilder = () => {
-    setLocation("/protocolo-dermalift");
+    setLocation(`/protocolo-dermalift?loadQuoteId=${quoteId}`);
   };
 
   const handleAcceptQuote = () => {
