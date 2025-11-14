@@ -42,7 +42,7 @@ interface SelectedItem {
 }
 
 export default function QuoteBuilder() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
@@ -66,8 +66,8 @@ export default function QuoteBuilder() {
     queryKey: ["/api/patients"],
   });
 
-  // Get URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
+  // Get URL parameters reactively from location
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const loadQuoteId = urlParams.get('loadQuote');
   const preselectedPatientId = urlParams.get('patient');
 
