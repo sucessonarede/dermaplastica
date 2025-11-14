@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,10 +68,14 @@ export default function QuoteBuilder() {
     queryKey: ["/api/patients"],
   });
 
-  // Get URL parameters reactively from location
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const loadQuoteId = urlParams.get('loadQuote');
-  const preselectedPatientId = urlParams.get('patient');
+  // Get URL parameters reactively - useMemo ensures it updates when location changes
+  const { loadQuoteId, preselectedPatientId } = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loadQuote = urlParams.get('loadQuote');
+    const patient = urlParams.get('patient');
+    console.log('📍 URL params extracted:', { loadQuote, patient, fullURL: window.location.href, location });
+    return { loadQuoteId: loadQuote, preselectedPatientId: patient };
+  }, [location]); // Re-compute when location changes
 
   // Load quote data if loadQuote parameter exists
   const { data: loadedQuote } = useQuery<any>({
@@ -95,8 +99,15 @@ export default function QuoteBuilder() {
 
   // Reset form when loadQuoteId changes
   useEffect(() => {
+    console.log('🔄 LoadQuoteId check:', {
+      previous: prevLoadQuoteIdRef.current,
+      current: loadQuoteId,
+      changed: prevLoadQuoteIdRef.current !== loadQuoteId
+    });
+    
     // Check if loadQuoteId actually changed from previous value
     if (prevLoadQuoteIdRef.current !== loadQuoteId) {
+      console.log('🔄 RESETTING FORM - loadQuoteId changed from', prevLoadQuoteIdRef.current, 'to', loadQuoteId);
       resetForm();
       prevLoadQuoteIdRef.current = loadQuoteId;
     }
@@ -114,8 +125,18 @@ export default function QuoteBuilder() {
 
   // Populate form when quote is loaded
   useEffect(() => {
+    console.log('🔍 Hydration check:', {
+      hasLoadedQuote: !!loadedQuote,
+      loadedQuoteId: loadedQuote?.id,
+      proceduresLength: procedures.length,
+      isHydrated: isHydratedRef.current,
+      loadQuoteId: loadQuoteId,
+      idsMatch: loadedQuote ? String(loadedQuote.id) === loadQuoteId : false
+    });
+    
     // Only hydrate if we have a quote, procedures, and haven't hydrated yet for this quote
     if (loadedQuote && procedures.length > 0 && !isHydratedRef.current && String(loadedQuote.id) === loadQuoteId) {
+      console.log('✅ HYDRATING QUOTE:', loadedQuote.id, 'with', loadedQuote.items.length, 'items');
       // Set the patient
       setSelectedPatient(loadedQuote.patient);
       
@@ -150,6 +171,9 @@ export default function QuoteBuilder() {
 
       // Mark as hydrated
       isHydratedRef.current = true;
+      console.log('✅ Quote hydrated successfully');
+    } else if (loadedQuote && procedures.length > 0 && isHydratedRef.current) {
+      console.log('⏭️ Skipping hydration - already hydrated');
     }
   }, [loadedQuote, procedures, loadQuoteId]);
 
