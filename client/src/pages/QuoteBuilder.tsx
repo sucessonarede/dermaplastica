@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,8 @@ export default function QuoteBuilder() {
   const [downPayment, setDownPayment] = useState<number>(0);
   const [bonusList, setBonusList] = useState<string[]>([]);
   const [newBonus, setNewBonus] = useState("");
+  const prevLoadQuoteIdRef = useRef<string | null | undefined>(undefined);
+  const isHydratedRef = useRef<boolean>(false);
   const { toast } = useToast();
 
   // Fetch procedures from API
@@ -77,6 +79,29 @@ export default function QuoteBuilder() {
     enabled: !!loadQuoteId,
   });
 
+  // Helper function to reset all form states
+  const resetForm = () => {
+    setSelectedPatient(null);
+    setSelectedItems(new Map());
+    setDiscountPercentage(0);
+    setInstallments(1);
+    setDownPayment(0);
+    setBonusList([]);
+    setNewBonus("");
+    setEditingPrice(null);
+    setEditingNote(null);
+    isHydratedRef.current = false;
+  };
+
+  // Reset form when loadQuoteId changes
+  useEffect(() => {
+    // Check if loadQuoteId actually changed from previous value
+    if (prevLoadQuoteIdRef.current !== loadQuoteId) {
+      resetForm();
+      prevLoadQuoteIdRef.current = loadQuoteId;
+    }
+  }, [loadQuoteId]);
+
   // Pre-select patient from URL parameter
   useEffect(() => {
     if (preselectedPatientId && patients.length > 0 && !selectedPatient) {
@@ -89,7 +114,8 @@ export default function QuoteBuilder() {
 
   // Populate form when quote is loaded
   useEffect(() => {
-    if (loadedQuote && procedures.length > 0) {
+    // Only hydrate if we have a quote, procedures, and haven't hydrated yet for this quote
+    if (loadedQuote && procedures.length > 0 && !isHydratedRef.current && String(loadedQuote.id) === loadQuoteId) {
       // Set the patient
       setSelectedPatient(loadedQuote.patient);
       
@@ -121,8 +147,11 @@ export default function QuoteBuilder() {
       if (loadedQuote.bonusList && Array.isArray(loadedQuote.bonusList)) {
         setBonusList(loadedQuote.bonusList);
       }
+
+      // Mark as hydrated
+      isHydratedRef.current = true;
     }
-  }, [loadedQuote, procedures]);
+  }, [loadedQuote, procedures, loadQuoteId]);
 
   const protocolConfig = {
     sustentacao: {
