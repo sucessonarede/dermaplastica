@@ -490,7 +490,7 @@ export default function Presentation() {
                     <div className="flex justify-between items-center text-base">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="text-muted-foreground">
-                        R$ {(parseFloat(quote.total) + parseFloat(quote.discount || '0')).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {quote.items.reduce((sum, item) => sum + parseFloat(item.subtotal), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-base">

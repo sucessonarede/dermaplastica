@@ -116,10 +116,11 @@ export const generateQuotePDF = async (quote: QuoteData) => {
 
   yPos = (doc as any).lastAutoTable.finalY + 10;
 
+  // Calculate subtotal by summing all item subtotals (which include custom prices)
+  const subtotal = quote.items.reduce((sum, item) => sum + toNumber(item.subtotal, 0), 0);
   const total = toNumber(quote.total, 0);
   const discountAmount = toNumber(quote.discount, 0);
   const discountPercentage = toNumber(quote.discountPercentage, 0);
-  const subtotal = total + discountAmount;
   const downPayment = toNumber(quote.downPayment, 0);
   const remainingBalance = total - downPayment;
   const installments = quote.installments || 0;
