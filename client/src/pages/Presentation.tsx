@@ -462,7 +462,7 @@ export default function Presentation() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end flex-shrink-0 ml-3">
-                          {(item.procedure as any).discountedPrice ? (
+                          {item.customPrice || (item.procedure as any).discountedPrice ? (
                             <>
                               <p className="text-xs text-muted-foreground line-through">
                                 R$ {(parseFloat(item.procedure.price) * parseFloat(item.quantity)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
