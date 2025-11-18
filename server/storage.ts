@@ -81,6 +81,7 @@ export interface IStorage {
   getQuotes(): Promise<QuoteWithDetails[]>;
   getQuoteById(id: string): Promise<QuoteWithDetails | undefined>;
   updateQuote(id: string, quote: Partial<InsertQuote>): Promise<Quote | undefined>;
+  updateQuoteItems(quoteId: string, items: CreateQuoteItem[]): Promise<void>;
   deleteQuote(id: string): Promise<boolean>;
   
   // Dashboard methods
@@ -254,6 +255,26 @@ export class MemStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  async updateQuoteItems(quoteId: string, items: CreateQuoteItem[]): Promise<void> {
+    // Wrap in transaction for atomicity
+    await db.transaction(async (tx) => {
+      // Delete existing items
+      await tx.delete(quoteItems).where(eq(quoteItems.quoteId, quoteId));
+      
+      // Insert new items
+      if (items.length > 0) {
+        const itemsWithQuoteId = items.map(item => ({
+          ...item,
+          quoteId: quoteId,
+          quantity: item.quantity.toString(),
+          subtotal: item.subtotal.toString(),
+          customPrice: item.customPrice?.toString(),
+        }));
+        await tx.insert(quoteItems).values(itemsWithQuoteId);
+      }
+    });
   }
 
   async deleteQuote(id: string): Promise<boolean> {

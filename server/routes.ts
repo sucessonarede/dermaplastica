@@ -27,6 +27,9 @@ const createQuoteBodySchema = z.object({
   })).min(1, "At least one item is required"),
 });
 
+// Schema for updating a quote with items
+const updateQuoteBodySchema = createQuoteBodySchema.partial();
+
 // Schema for patient filters query parameters
 const patientsQuerySchema = z.object({
   search: z.string().optional(),
@@ -237,10 +240,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a quote
   app.put("/api/quotes/:id", async (req: Request, res: Response) => {
     try {
-      const updateData = insertQuoteSchema.partial().parse(req.body);
+      const body = updateQuoteBodySchema.parse(req.body);
       
       // Validate downPayment does not exceed total
-      if (updateData.downPayment !== undefined) {
+      if (body.downPayment !== undefined) {
         // Get existing quote to check total
         const existingQuote = await storage.getQuoteById(req.params.id);
         if (!existingQuote) {
@@ -248,16 +251,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        const totalToCheck = updateData.total !== undefined 
-          ? updateData.total 
+        const totalToCheck = body.total !== undefined 
+          ? body.total 
           : parseFloat(existingQuote.total);
         
-        if (updateData.downPayment > totalToCheck) {
+        if (body.downPayment > totalToCheck) {
           res.status(400).json({ error: "Valor de entrada não pode exceder o total" });
           return;
         }
       }
       
+      // Extract items from body
+      const { items, ...quoteData } = body;
+      
+      // Cast status to proper type if present
+      const updateData: any = { ...quoteData };
+      if (updateData.status) {
+        updateData.status = updateData.status as "pending" | "accepted" | "rejected";
+      }
+      
+      // Update quote data
       const quote = await storage.updateQuote(req.params.id, updateData);
       
       if (!quote) {
@@ -265,7 +278,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      res.json(quote);
+      // If items are provided, update them
+      if (items && items.length > 0) {
+        await storage.updateQuoteItems(req.params.id, items);
+      }
+      
+      // Return updated quote with items
+      const updatedQuote = await storage.getQuoteById(req.params.id);
+      res.json(updatedQuote);
     } catch (error: any) {
       if (error.name === "ZodError") {
         res.status(400).json({ error: "Invalid request data", details: error.errors });
