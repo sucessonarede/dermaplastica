@@ -45,7 +45,7 @@ export const generateQuotePDF = async (quote: QuoteData) => {
 
   const terracottaColor: [number, number, number] = [139, 69, 19];
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 15;
+  let yPos = 60; // Espaçamento para cabeçalho pré-impresso
 
   // Título (sem logotipo)
   doc.setFontSize(18);
