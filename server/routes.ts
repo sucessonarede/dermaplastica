@@ -30,6 +30,12 @@ const createQuoteBodySchema = z.object({
 // Schema for updating a quote with items
 const updateQuoteBodySchema = createQuoteBodySchema.partial();
 
+// Schema for changing password
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+  newPassword: z.string().min(6, "Nova senha deve ter no mínimo 6 caracteres"),
+});
+
 // Schema for patient filters query parameters
 const patientsQuerySchema = z.object({
   search: z.string().optional(),
@@ -171,6 +177,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(204).send();
       }
     });
+  });
+
+  app.post("/api/auth/change-password", async (req: Request, res: Response) => {
+    try {
+      if (!req.session.userId) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+      }
+
+      const body = changePasswordSchema.parse(req.body);
+      
+      // Get user
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        res.status(404).json({ error: "Usuário não encontrado" });
+        return;
+      }
+      
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(body.currentPassword, user.password);
+      if (!isValidPassword) {
+        res.status(401).json({ error: "Senha atual incorreta" });
+        return;
+      }
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(body.newPassword, 10);
+      
+      // Update password
+      await storage.updateUserPassword(user.id, hashedPassword);
+      
+      res.status(200).json({ message: "Senha alterada com sucesso" });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error changing password:", error);
+        res.status(500).json({ error: "Erro ao alterar senha" });
+      }
+    }
   });
 
   // Create a quote with items

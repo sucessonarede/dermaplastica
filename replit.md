@@ -34,7 +34,9 @@ Preferred communication style: Simple, everyday language.
 
 **API Design:** RESTful endpoints (`/api` prefix), logging, error handling, session-based authentication with `express-session` (7-day httpOnly/secure cookies, `SESSION_SECRET`). Session storage uses memorystore in development and PostgreSQL (connect-pg-simple) in production.
 
-**Authentication System:** Email/password authentication using Bcrypt for hashing. Endpoints for registration, login, user info (`/me`), and logout. Frontend forms use `react-hook-form` with Zod validation. Cache clearing with `queryClient.clear()` on login, registration, and logout ensures fresh data and prevents data leakage.
+**Authentication System:** Email/password authentication using Bcrypt for hashing. Endpoints for registration, login, user info (`/me`), logout, and password change (`/api/auth/change-password`). Password change endpoint validates current password before updating to new hashed password. Frontend forms use `react-hook-form` with Zod validation. Cache clearing with `queryClient.clear()` on login, registration, and logout ensures fresh data and prevents data leakage.
+
+**Clinic Settings Module:** Comprehensive settings page (`/settings`) with clinic information management (name, CNPJ, address, contact info), business goals configuration (monthly revenue target, conversion rate goal, new patient goal), and user account security. Features dedicated password change form with current password validation and confirmation requirements.
 
 ### Data Schema
 

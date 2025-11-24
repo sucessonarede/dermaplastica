@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Upload, Save } from "lucide-react";
+import { Building2, Upload, Save, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,20 @@ import { insertClinicSettingsSchema, type InsertClinicSettings, type ClinicSetti
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
+
+// Schema for password change
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+  newPassword: z.string().min(6, "Nova senha deve ter no mínimo 6 caracteres"),
+  confirmPassword: z.string().min(1, "Confirme a nova senha"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
 export default function ClinicSettings() {
   const { toast } = useToast();
@@ -76,6 +89,45 @@ export default function ClinicSettings() {
 
   const onSubmit = (data: InsertClinicSettings) => {
     saveMutation.mutate(data);
+  };
+
+  // Password change form
+  const passwordForm = useForm<ChangePasswordForm>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Mutation to change password
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePasswordForm) => {
+      const res = await apiRequest("POST", "/api/auth/change-password", {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Senha alterada!",
+        description: "Sua senha foi alterada com sucesso.",
+      });
+      passwordForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message || "Não foi possível alterar a senha.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onPasswordSubmit = (data: ChangePasswordForm) => {
+    changePasswordMutation.mutate(data);
   };
 
   if (isLoading) {
@@ -287,6 +339,83 @@ export default function ClinicSettings() {
                   <p className="text-xs text-muted-foreground">
                     O logo será usado em orçamentos e documentos PDF
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center gap-2">
+                    <Lock className="h-5 w-5" />
+                    Alterar Senha
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Form {...passwordForm}>
+                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                      <FormField
+                        control={passwordForm.control}
+                        name="currentPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Senha Atual</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="password" 
+                                data-testid="input-current-password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={passwordForm.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nova Senha</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="password" 
+                                data-testid="input-new-password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={passwordForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirmar Nova Senha</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="password" 
+                                data-testid="input-confirm-password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button 
+                        type="submit" 
+                        className="w-full"
+                        disabled={changePasswordMutation.isPending}
+                        data-testid="button-change-password"
+                      >
+                        {changePasswordMutation.isPending ? "Alterando..." : "Alterar Senha"}
+                      </Button>
+                    </form>
+                  </Form>
                 </CardContent>
               </Card>
 
