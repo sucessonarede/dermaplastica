@@ -18,7 +18,7 @@ Preferred communication style: Simple, everyday language.
 
 **Application Structure:** Page-based routing (Dashboard, Patients, Quote Builder, Procedures, Reports, Clinic Settings), sidebar navigation, theme provider for light/dark mode, and toast notifications.
 
-**Patients Module:** CRM interface displaying patient cards with contact information, tags, and associated quotes. Each patient card shows a list of linked quotes with clickable buttons displaying creation date and total value. Clicking a quote button navigates directly to the presentation view (`/apresentacao/:quoteId`).
+**Patients Module:** CRM interface displaying patient cards with contact information, tags, and associated quotes. Each patient card shows a list of linked quotes with clickable buttons displaying creation date and total value. Clicking a quote button navigates directly to the presentation view (`/apresentacao/:quoteId`). Patient forms include a complaints/observations textarea for documenting patient concerns. Photo management is available when editing existing patients, allowing upload of images with captions (stored in Replit Object Storage), displayed in a 2-column grid with delete functionality on hover.
 
 **Reports Module:** Real-time analytics dashboard displaying clinic performance metrics. Shows average ticket value, average discount percentage (calculated across ALL quotes including zero-discount ones), and top procedures by sales count and revenue. Data aggregated from quote_items table using SQL GROUP BY operations.
 
@@ -43,7 +43,8 @@ Preferred communication style: Simple, everyday language.
 **Core Entities:**
 - **Users:** Authentication and access control (id, email, username, hashed password).
 - **Procedures:** Service catalog (id, name, description, price, mlPrice, minMl, maxMl, protocol, category, displayOrder). Supports per-mL pricing and quantity constraints. The displayOrder field (integer, default 0) controls the display sequence in the Quote Builder's protocol lists—procedures are sorted by displayOrder ascending, then by name.
-- **Patients:** CRM functionality (id, name, phone, email, cpf, birthDate, address, city, state, origin, tags).
+- **Patients:** CRM functionality (id, name, phone, email, cpf, birthDate, address, city, state, origin, tags, complaints, createdAt). The complaints field stores patient observations and concerns as multi-line text.
+- **PatientPhotos:** Photo management for patients (id, patientId, photoUrl, caption, uploadedAt). Photos are stored in Replit Object Storage under `.private/patient-photos/{patientId}/` with optional captions. Supports upload (max 10MB, image files only), listing, and deletion.
 - **Quotes:** Dermalift Protocol-based quotes (id, patientId, total, discount, discountPercentage, installments, downPayment, bonusList, status, createdAt, notes). Supports percentage-based discounts, down payment tracking, installment calculations (based on remaining balance after down payment), and bonus tracking.
 - **QuoteItems:** Line items for quotes (id, quoteId, procedureId, quantity, customPrice, subtotal, note). Supports flexible custom pricing and per-item observations.
 
@@ -53,6 +54,11 @@ Preferred communication style: Simple, everyday language.
 
 **Database:**
 - Supabase PostgreSQL (via `pg` node-postgres driver with SSL)
+
+**Object Storage:**
+- Replit Object Storage for patient photos
+- Lazy initialization to avoid startup errors
+- Private bucket storage (`.private/patient-photos/`)
 
 **Development Tools:**
 - Replit-specific plugins (cartographer, dev-banner, runtime-error-modal)
