@@ -5,7 +5,7 @@ import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSc
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import multer from "multer";
-import { ObjectStorageService } from "./objectStorage";
+import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
 
 // Schema for creating a quote with items
 const createQuoteBodySchema = z.object({
@@ -492,18 +492,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const patientId = req.params.id;
       const caption = req.body.caption || "";
       
-      // Generate unique filename
+      // Generate unique filename using PRIVATE_OBJECT_DIR
       const timestamp = Date.now();
       const extension = req.file.originalname.split('.').pop();
-      const filename = `.private/patient-photos/${patientId}/${timestamp}.${extension}`;
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const fullPath = `${privateDir}/patient-photos/${patientId}/${timestamp}.${extension}`;
+      const publicUrl = `/patient-photos/${patientId}/${timestamp}.${extension}`;
       
       // Upload to object storage
-      await objectStorageService.uploadFromBytes(filename, req.file.buffer);
+      await objectStorageService.uploadFromBytes(fullPath, req.file.buffer);
       
       // Create photo record in database
       const photo = await storage.createPatientPhoto({
         patientId,
-        photoUrl: filename,
+        photoUrl: publicUrl,
         caption,
       });
       
@@ -525,6 +527,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve patient photos
+  app.get("/patient-photos/*", async (req: Request, res: Response) => {
+    try {
+      const photoPath = req.path.replace("/patient-photos/", "");
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const fullPath = `${privateDir}/patient-photos/${photoPath}`;
+      
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).json({ error: "Foto não encontrada" });
+      }
+      
+      await objectStorageService.downloadObject(file, res);
+    } catch (error: any) {
+      console.error("Error serving patient photo:", error);
+      res.status(500).json({ error: "Erro ao carregar foto" });
+    }
+  });
+
   app.delete("/api/patient-photos/:id", async (req: Request, res: Response) => {
     try {
       const photoId = req.params.id;
@@ -536,7 +561,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (photo) {
         // Delete from object storage
         try {
-          await objectStorageService.deleteObject(photo.photoUrl);
+          // Convert public URL back to full path
+          const photoPath = photo.photoUrl.replace("/patient-photos/", "");
+          const privateDir = objectStorageService.getPrivateObjectDir();
+          const fullPath = `${privateDir}/patient-photos/${photoPath}`;
+          
+          await objectStorageService.deleteObject(fullPath);
         } catch (err) {
           console.error("Error deleting file from object storage:", err);
         }
