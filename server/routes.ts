@@ -5,7 +5,7 @@ import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSc
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import multer from "multer";
-import { Client as ObjectStorageClient } from "@replit/object-storage";
+import { ObjectStorageService } from "./objectStorage";
 
 // Schema for creating a quote with items
 const createQuoteBodySchema = z.object({
@@ -77,10 +77,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for file uploads (memory storage)
   const upload = multer({ storage: multer.memoryStorage() });
 
-  // Helper function to get Object Storage client (lazy initialization)
-  const getObjectStorageClient = () => {
-    return new ObjectStorageClient();
-  };
+  // Initialize Object Storage Service
+  const objectStorageService = new ObjectStorageService();
 
   // Authentication routes
   app.post("/api/auth/register", async (req: Request, res: Response) => {
@@ -500,8 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filename = `.private/patient-photos/${patientId}/${timestamp}.${extension}`;
       
       // Upload to object storage
-      const objectStorage = getObjectStorageClient();
-      await objectStorage.uploadFromBytes(filename, req.file.buffer);
+      await objectStorageService.uploadFromBytes(filename, req.file.buffer);
       
       // Create photo record in database
       const photo = await storage.createPatientPhoto({
@@ -539,8 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (photo) {
         // Delete from object storage
         try {
-          const objectStorage = getObjectStorageClient();
-          await objectStorage.delete(photo.photoUrl);
+          await objectStorageService.deleteObject(photo.photoUrl);
         } catch (err) {
           console.error("Error deleting file from object storage:", err);
         }
