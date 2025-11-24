@@ -166,10 +166,10 @@ export default function ClinicSettings() {
         </div>
       </div>
 
-      <Form {...form}>
-        <form id="clinic-settings-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3 items-start">
-            <div className="lg:col-span-2 space-y-6">
+      <div className="grid gap-6 lg:grid-cols-3 items-start">
+        <div className="lg:col-span-2 space-y-6">
+          <Form {...form}>
+            <form id="clinic-settings-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-foreground">Informações Básicas</CardTitle>
@@ -317,112 +317,110 @@ export default function ClinicSettings() {
                   </div>
                 </CardContent>
               </Card>
+            </form>
+          </Form>
+        </div>
 
-            </div>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">Logo da Clínica</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-center h-32 rounded-md border-2 border-dashed bg-muted hover-elevate">
+                <div className="text-center">
+                  <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Logo atual</p>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full" data-testid="button-upload-logo">
+                <Upload className="h-4 w-4 mr-2" />
+                Alterar Logo
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                O logo será usado em orçamentos e documentos PDF
+              </p>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground">Logo da Clínica</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-center h-32 rounded-md border-2 border-dashed bg-muted hover-elevate">
-                    <div className="text-center">
-                      <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">Logo atual</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="w-full" data-testid="button-upload-logo">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Alterar Logo
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Alterar Senha
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha Atual</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="password" 
+                            data-testid="input-current-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nova Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="password" 
+                            data-testid="input-new-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Nova Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="password" 
+                            data-testid="input-confirm-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={changePasswordMutation.isPending}
+                    data-testid="button-change-password"
+                  >
+                    {changePasswordMutation.isPending ? "Alterando..." : "Alterar Senha"}
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    O logo será usado em orçamentos e documentos PDF
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <Lock className="h-5 w-5" />
-                    Alterar Senha
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                      <FormField
-                        control={passwordForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Senha Atual</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                type="password" 
-                                data-testid="input-current-password"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nova Senha</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                type="password" 
-                                data-testid="input-new-password"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirmar Nova Senha</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                type="password" 
-                                data-testid="input-confirm-password"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button 
-                        type="submit" 
-                        className="w-full"
-                        disabled={changePasswordMutation.isPending}
-                        data-testid="button-change-password"
-                      >
-                        {changePasswordMutation.isPending ? "Alterando..." : "Alterar Senha"}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-
-            </div>
-          </div>
-        </form>
-      </Form>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

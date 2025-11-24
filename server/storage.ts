@@ -514,6 +514,7 @@ export class MemStorage implements IStorage {
         state: patients.state,
         origin: patients.origin,
         tags: patients.tags,
+        complaints: patients.complaints,
         createdAt: patients.createdAt,
         quoteCount: sql<number>`CAST(COUNT(DISTINCT ${quotes.id}) AS INTEGER)`,
         totalBudget: sql<number>`COALESCE(SUM(CAST(${quotes.total} AS DECIMAL)), 0)`,
@@ -534,6 +535,7 @@ export class MemStorage implements IStorage {
         patients.state,
         patients.origin,
         patients.tags,
+        patients.complaints,
         patients.createdAt
       );
 

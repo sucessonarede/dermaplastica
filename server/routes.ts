@@ -1,9 +1,11 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import multer from "multer";
+import { Client as ObjectStorageClient } from "@replit/object-storage";
 
 // Schema for creating a quote with items
 const createQuoteBodySchema = z.object({
@@ -71,6 +73,14 @@ const patientsQuerySchema = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // prefix all routes with /api
+
+  // Configure multer for file uploads (memory storage)
+  const upload = multer({ storage: multer.memoryStorage() });
+
+  // Helper function to get Object Storage client (lazy initialization)
+  const getObjectStorageClient = () => {
+    return new ObjectStorageClient();
+  };
 
   // Authentication routes
   app.post("/api/auth/register", async (req: Request, res: Response) => {
@@ -470,6 +480,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ error: "Erro ao excluir paciente" });
+    }
+  });
+
+  // Patient photo routes
+  app.post("/api/patients/:id/photos", upload.single("photo"), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: "Nenhuma foto enviada" });
+        return;
+      }
+
+      const patientId = req.params.id;
+      const caption = req.body.caption || "";
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const extension = req.file.originalname.split('.').pop();
+      const filename = `.private/patient-photos/${patientId}/${timestamp}.${extension}`;
+      
+      // Upload to object storage
+      const objectStorage = getObjectStorageClient();
+      await objectStorage.uploadFromBytes(filename, req.file.buffer);
+      
+      // Create photo record in database
+      const photo = await storage.createPatientPhoto({
+        patientId,
+        photoUrl: filename,
+        caption,
+      });
+      
+      res.status(201).json(photo);
+    } catch (error: any) {
+      console.error("Error uploading patient photo:", error);
+      res.status(500).json({ error: "Erro ao fazer upload da foto" });
+    }
+  });
+
+  app.get("/api/patients/:id/photos", async (req: Request, res: Response) => {
+    try {
+      const patientId = req.params.id;
+      const photos = await storage.getPatientPhotos(patientId);
+      res.json(photos);
+    } catch (error: any) {
+      console.error("Error fetching patient photos:", error);
+      res.status(500).json({ error: "Erro ao buscar fotos" });
+    }
+  });
+
+  app.delete("/api/patient-photos/:id", async (req: Request, res: Response) => {
+    try {
+      const photoId = req.params.id;
+      
+      // Get photo to delete file from storage
+      const photos = await storage.getPatientPhotos("");
+      const photo = photos.find(p => p.id === photoId);
+      
+      if (photo) {
+        // Delete from object storage
+        try {
+          const objectStorage = getObjectStorageClient();
+          await objectStorage.delete(photo.photoUrl);
+        } catch (err) {
+          console.error("Error deleting file from object storage:", err);
+        }
+      }
+      
+      // Delete from database
+      const success = await storage.deletePatientPhoto(photoId);
+      
+      if (!success) {
+        res.status(404).json({ error: "Foto não encontrada" });
+        return;
+      }
+      
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting patient photo:", error);
+      res.status(500).json({ error: "Erro ao excluir foto" });
     }
   });
 
