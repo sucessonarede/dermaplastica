@@ -492,6 +492,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const patientId = req.params.id;
       const caption = req.body.caption || "";
       
+      console.log("📸 [UPLOAD PHOTO] Request body:", req.body);
+      console.log("📸 [UPLOAD PHOTO] Caption value:", caption);
+      console.log("📸 [UPLOAD PHOTO] Caption type:", typeof caption);
+      console.log("📸 [UPLOAD PHOTO] Caption length:", caption.length);
+      
       // Generate unique filename using PRIVATE_OBJECT_DIR
       const timestamp = Date.now();
       const extension = req.file.originalname.split('.').pop();
@@ -508,6 +513,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         photoUrl: publicUrl,
         caption,
       });
+      
+      console.log("💾 [UPLOAD PHOTO] Saved photo:", JSON.stringify(photo, null, 2));
       
       res.status(201).json(photo);
     } catch (error: any) {
