@@ -93,6 +93,7 @@ export const patients = pgTable("patients", {
   state: text("state"),
   origin: text("origin"),
   tags: text("tags").array(),
+  complaints: text("complaints"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -107,6 +108,24 @@ export const insertPatientSchema = createInsertSchema(patients).omit({
 
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Patient = typeof patients.$inferSelect;
+
+export const patientPhotos = pgTable("patient_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  patientId: varchar("patient_id").notNull().references(() => patients.id),
+  photoUrl: text("photo_url").notNull(),
+  caption: text("caption"),
+  uploadedAt: text("uploaded_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const insertPatientPhotoSchema = createInsertSchema(patientPhotos).omit({
+  id: true,
+  uploadedAt: true,
+}).extend({
+  photoUrl: z.string().min(1, "URL da foto é obrigatória"),
+});
+
+export type InsertPatientPhoto = z.infer<typeof insertPatientPhotoSchema>;
+export type PatientPhoto = typeof patientPhotos.$inferSelect;
 
 export const quotes = pgTable("quotes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
