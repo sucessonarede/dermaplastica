@@ -590,6 +590,7 @@ export class MemStorage implements IStorage {
       state: r.state,
       origin: r.origin,
       tags: r.tags,
+      complaints: r.complaints,
       createdAt: r.createdAt,
       quoteCount: Number(r.quoteCount),
       totalBudget: Number(r.totalBudget),
