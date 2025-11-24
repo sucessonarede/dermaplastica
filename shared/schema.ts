@@ -104,6 +104,7 @@ export const insertPatientSchema = createInsertSchema(patients).omit({
   name: z.string().min(1, "Nome é obrigatório"),
   phone: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
+  complaints: z.string().optional(),
 });
 
 export type InsertPatient = z.infer<typeof insertPatientSchema>;

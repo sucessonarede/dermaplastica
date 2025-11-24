@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, FileText, ExternalLink, Filter, X } from "lucide-react";
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, FileText, ExternalLink, Filter, X, Upload, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -16,6 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 
+interface PatientPhoto {
+  id: string;
+  patientId: string;
+  photoUrl: string;
+  caption: string | null;
+  uploadedAt: string;
+}
+
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -28,6 +37,8 @@ export default function Patients() {
     minBudget: "",
     maxBudget: "",
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoCaption, setPhotoCaption] = useState("");
   const { toast} = useToast();
   const [, setLocation] = useLocation();
 
@@ -56,6 +67,18 @@ export default function Patients() {
     queryKey: ["/api/quotes"],
   });
 
+  // Fetch photos when editing a patient
+  const { data: patientPhotos = [] } = useQuery<PatientPhoto[]>({
+    queryKey: ["/api/patients", editingPatient?.id, "photos"],
+    queryFn: async () => {
+      if (!editingPatient?.id) return [];
+      const res = await fetch(`/api/patients/${editingPatient.id}/photos`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch photos");
+      return await res.json();
+    },
+    enabled: !!editingPatient?.id,
+  });
+
   const form = useForm<InsertPatient>({
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
@@ -69,6 +92,7 @@ export default function Patients() {
       state: "",
       origin: "",
       tags: [],
+      complaints: "",
     },
   });
 
@@ -128,6 +152,66 @@ export default function Patients() {
     },
   });
 
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async ({ file, caption }: { file: File; caption: string }) => {
+      if (!editingPatient?.id) throw new Error("No patient selected");
+      
+      const formData = new FormData();
+      formData.append("photo", file);
+      formData.append("caption", caption);
+
+      const res = await fetch(`/api/patients/${editingPatient.id}/photos`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to upload photo");
+      }
+
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", editingPatient?.id, "photos"] });
+      toast({
+        title: "Foto adicionada!",
+        description: "A foto foi enviada com sucesso.",
+      });
+      setPhotoCaption("");
+      setUploadingPhoto(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao enviar foto",
+        description: error.message,
+        variant: "destructive",
+      });
+      setUploadingPhoto(false);
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (photoId: string) => {
+      await apiRequest("DELETE", `/api/patient-photos/${photoId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", editingPatient?.id, "photos"] });
+      toast({
+        title: "Foto excluída!",
+        description: "A foto foi removida com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir foto",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertPatient) => {
     savePatientMutation.mutate(data);
   };
@@ -145,6 +229,7 @@ export default function Patients() {
       state: patient.state || "",
       origin: patient.origin || "",
       tags: patient.tags || [],
+      complaints: patient.complaints || "",
     });
     setDialogOpen(true);
   };
@@ -182,7 +267,37 @@ export default function Patients() {
     if (!open) {
       setEditingPatient(null);
       form.reset();
+      setPhotoCaption("");
+      setUploadingPhoto(false);
     }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Arquivo inválido",
+        description: "Por favor, selecione apenas arquivos de imagem.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O tamanho máximo permitido é 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingPhoto(true);
+    uploadPhotoMutation.mutate({ file, caption: photoCaption });
+    
+    e.target.value = "";
   };
 
   if (isLoading) {
@@ -287,6 +402,100 @@ export default function Patients() {
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="complaints"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Queixas / Observações</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Descreva as queixas ou observações do paciente..."
+                          className="min-h-[100px]"
+                          data-testid="input-patient-complaints"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {editingPatient && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        Fotos do Paciente
+                      </h4>
+                    </div>
+
+                    {patientPhotos.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {patientPhotos.map((photo) => (
+                          <div
+                            key={photo.id}
+                            className="relative group rounded-md border border-border overflow-hidden"
+                            data-testid={`photo-item-${photo.id}`}
+                          >
+                            <img
+                              src={photo.photoUrl}
+                              alt={photo.caption || "Foto do paciente"}
+                              className="w-full h-32 object-cover"
+                            />
+                            {photo.caption && (
+                              <p className="text-xs text-muted-foreground p-2 bg-background/95 border-t border-border">
+                                {photo.caption}
+                              </p>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => deletePhotoMutation.mutate(photo.id)}
+                              disabled={deletePhotoMutation.isPending}
+                              data-testid={`button-delete-photo-${photo.id}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Input
+                        type="text"
+                        placeholder="Legenda da foto (opcional)"
+                        value={photoCaption}
+                        onChange={(e) => setPhotoCaption(e.target.value)}
+                        data-testid="input-photo-caption"
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          disabled={uploadingPhoto}
+                          className="flex-1"
+                          data-testid="input-photo-upload"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={uploadingPhoto}
+                          onClick={() => document.querySelector<HTMLInputElement>('[data-testid="input-photo-upload"]')?.click()}
+                          data-testid="button-upload-photo"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadingPhoto ? "Enviando..." : "Adicionar Foto"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <DialogFooter>
                   <Button
                     type="button"
