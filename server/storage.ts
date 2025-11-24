@@ -6,6 +6,8 @@ import {
   type QuoteItem,
   type InsertQuoteItem,
   type Patient,
+  type PatientPhoto,
+  type InsertPatientPhoto,
   type Procedure,
   type InsertProcedure,
   type ClinicSettings,
@@ -13,7 +15,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, quotes, quoteItems, patients, procedures, clinicSettings } from "@shared/schema";
+import { users, quotes, quoteItems, patients, patientPhotos, procedures, clinicSettings } from "@shared/schema";
 import { eq, and, gte, sql, desc, count, inArray } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -97,6 +99,11 @@ export interface IStorage {
   createPatient(patient: Partial<Omit<Patient, 'id'>> & { name: string }): Promise<Patient>;
   updatePatient(id: string, patient: Partial<Omit<Patient, 'id'>>): Promise<Patient | undefined>;
   deletePatient(id: string): Promise<boolean>;
+  
+  // Patient photo methods
+  getPatientPhotos(patientId: string): Promise<PatientPhoto[]>;
+  createPatientPhoto(photo: InsertPatientPhoto): Promise<PatientPhoto>;
+  deletePatientPhoto(id: string): Promise<boolean>;
   
   // Procedure methods
   getProcedures(): Promise<Procedure[]>;
@@ -619,6 +626,24 @@ export class MemStorage implements IStorage {
 
   async deletePatient(id: string): Promise<boolean> {
     const result = await db.delete(patients).where(eq(patients.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getPatientPhotos(patientId: string): Promise<PatientPhoto[]> {
+    return await db
+      .select()
+      .from(patientPhotos)
+      .where(eq(patientPhotos.patientId, patientId))
+      .orderBy(desc(patientPhotos.uploadedAt));
+  }
+
+  async createPatientPhoto(photo: InsertPatientPhoto): Promise<PatientPhoto> {
+    const [patientPhoto] = await db.insert(patientPhotos).values(photo).returning();
+    return patientPhoto;
+  }
+
+  async deletePatientPhoto(id: string): Promise<boolean> {
+    const result = await db.delete(patientPhotos).where(eq(patientPhotos.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
