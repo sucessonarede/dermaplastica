@@ -48,6 +48,9 @@ export default function QuoteBuilder() {
   const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddName, setQuickAddName] = useState("");
+  const [quickAddPhone, setQuickAddPhone] = useState("");
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
@@ -344,6 +347,48 @@ export default function QuoteBuilder() {
     setBonusList(bonusList.filter((_, i) => i !== index));
   };
 
+  // Mutation to quick add patient
+  const quickAddPatientMutation = useMutation({
+    mutationFn: async (data: { name: string; phone: string }) => {
+      const res = await apiRequest("POST", "/api/patients", data);
+      return await res.json();
+    },
+    onSuccess: (newPatient) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      setSelectedPatient(newPatient);
+      setPatientDialogOpen(false);
+      setShowQuickAdd(false);
+      setQuickAddName("");
+      setQuickAddPhone("");
+      toast({
+        title: "Paciente adicionado!",
+        description: "Você pode completar o cadastro depois na página de Pacientes.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar paciente",
+        description: error.message || "Não foi possível adicionar o paciente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleQuickAddPatient = () => {
+    if (!quickAddName.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, informe o nome do paciente.",
+        variant: "destructive",
+      });
+      return;
+    }
+    quickAddPatientMutation.mutate({ 
+      name: quickAddName.trim(), 
+      phone: quickAddPhone.trim() 
+    });
+  };
+
   // Mutation to save quote
   const saveQuoteMutation = useMutation({
     mutationFn: async () => {
@@ -496,48 +541,112 @@ export default function QuoteBuilder() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md" data-testid="dialog-select-patient">
             <DialogHeader>
-              <DialogTitle>Selecionar Paciente</DialogTitle>
+              <DialogTitle>{showQuickAdd ? "Adicionar Paciente" : "Selecionar Paciente"}</DialogTitle>
               <DialogDescription>
-                Escolha o paciente para criar o protocolo personalizado
+                {showQuickAdd 
+                  ? "Cadastro rápido - complete os dados depois" 
+                  : "Escolha o paciente para criar o protocolo personalizado"}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar paciente..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  data-testid="input-search-patient"
-                />
-              </div>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {filteredPatients.map((patient) => (
-                  <div
-                    key={patient.id}
-                    className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer hover-elevate active-elevate-2 ${
-                      selectedPatient?.id === patient.id ? "border-primary bg-primary/5" : ""
-                    }`}
-                    onClick={() => handleSelectPatient(patient)}
-                    data-testid={`card-patient-${patient.id}`}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{patient.name}</p>
-                      <p className="text-sm text-muted-foreground">{patient.phone}</p>
-                    </div>
-                    {selectedPatient?.id === patient.id && (
-                      <Check className="h-5 w-5 text-primary" />
-                    )}
+            
+            {showQuickAdd ? (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
+                      Nome *
+                    </label>
+                    <Input
+                      placeholder="Nome do paciente"
+                      value={quickAddName}
+                      onChange={(e) => setQuickAddName(e.target.value)}
+                      data-testid="input-quick-add-name"
+                    />
                   </div>
-                ))}
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
+                      Telefone
+                    </label>
+                    <Input
+                      placeholder="(00) 00000-0000"
+                      value={quickAddPhone}
+                      onChange={(e) => setQuickAddPhone(e.target.value)}
+                      data-testid="input-quick-add-phone"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowQuickAdd(false);
+                      setQuickAddName("");
+                      setQuickAddPhone("");
+                    }}
+                    data-testid="button-cancel-quick-add"
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleQuickAddPatient}
+                    disabled={quickAddPatientMutation.isPending || !quickAddName.trim()}
+                    data-testid="button-confirm-quick-add"
+                  >
+                    {quickAddPatientMutation.isPending ? "Salvando..." : "Adicionar"}
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar paciente..."
+                      className="pl-10"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      data-testid="input-search-patient"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowQuickAdd(true)}
+                    data-testid="button-show-quick-add"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Novo
+                  </Button>
+                </div>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {filteredPatients.map((patient) => (
+                    <div
+                      key={patient.id}
+                      className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer hover-elevate active-elevate-2 ${
+                        selectedPatient?.id === patient.id ? "border-primary bg-primary/5" : ""
+                      }`}
+                      onClick={() => handleSelectPatient(patient)}
+                      data-testid={`card-patient-${patient.id}`}
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{patient.name}</p>
+                        <p className="text-sm text-muted-foreground">{patient.phone}</p>
+                      </div>
+                      {selectedPatient?.id === patient.id && (
+                        <Check className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
