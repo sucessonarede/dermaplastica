@@ -14,7 +14,7 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Presentation, Edit2, FileText, Trash2, Search, Calendar, X } from "lucide-react";
+import { Presentation, Edit2, FileText, Trash2, Search, Calendar, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
 import {
@@ -62,12 +62,15 @@ interface SavedQuote {
   }>;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function SavedQuotes() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: savedQuotes, isLoading: isLoadingSavedQuotes } = useQuery<SavedQuote[]>({
     queryKey: ["/api/quotes"],
@@ -148,28 +151,36 @@ export default function SavedQuotes() {
   };
 
   const filteredQuotes = savedQuotes?.filter((quote) => {
-    // Filter by search term (patient name)
     const matchesSearch = searchTerm.trim() === "" || 
       quote.patient.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filter by date range
     const quoteDate = new Date(quote.createdAt);
     const matchesStartDate = !startDate || quoteDate >= new Date(startDate);
     const matchesEndDate = !endDate || quoteDate <= new Date(endDate + "T23:59:59");
 
     return matchesSearch && matchesStartDate && matchesEndDate;
-  }) || [];
+  })?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
   const clearFilters = () => {
     setSearchTerm("");
     setStartDate("");
     setEndDate("");
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = searchTerm.trim() !== "" || startDate !== "" || endDate !== "";
 
-  // Calculate total sum of filtered quotes
   const totalSum = filteredQuotes.reduce((sum, quote) => sum + parseFloat(quote.total), 0);
+
+  const totalPages = Math.ceil(filteredQuotes.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedQuotes = filteredQuotes.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-6">
@@ -188,7 +199,6 @@ export default function SavedQuotes() {
         )}
       </div>
 
-      {/* Filters Section */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -197,7 +207,7 @@ export default function SavedQuotes() {
               <Input
                 placeholder="Buscar por nome do paciente..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="pl-9"
                 data-testid="input-search-quotes"
               />
@@ -209,7 +219,7 @@ export default function SavedQuotes() {
                   type="date"
                   placeholder="Data inicial"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
                   className="pl-9 w-full sm:w-auto"
                   data-testid="input-start-date"
                 />
@@ -220,7 +230,7 @@ export default function SavedQuotes() {
                   type="date"
                   placeholder="Data final"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
                   className="pl-9 w-full sm:w-auto"
                   data-testid="input-end-date"
                 />
@@ -287,117 +297,174 @@ export default function SavedQuotes() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredQuotes.map((quote) => (
-            <Card key={quote.id} className="hover-elevate" data-testid={`card-quote-${quote.id}`}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {quote.patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-sm" data-testid={`text-patient-name-${quote.id}`}>
-                        {quote.patient.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground" data-testid={`text-date-${quote.id}`}>
-                        {formatDate(quote.createdAt)}
-                      </p>
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {paginatedQuotes.map((quote, index) => (
+                  <div 
+                    key={quote.id} 
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                    data-testid={`row-quote-${quote.id}`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {quote.patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate" data-testid={`text-patient-name-${quote.id}`}>
+                          {quote.patient.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground" data-testid={`text-date-${quote.id}`}>
+                          {formatDate(quote.createdAt)} • {quote.items.length} {quote.items.length === 1 ? 'procedimento' : 'procedimentos'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 sm:gap-6">
+                      <div className="text-right">
+                        <p className="font-semibold text-primary" data-testid={`text-total-${quote.id}`}>
+                          R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+
+                      <Select
+                        value={quote.status}
+                        onValueChange={(value) => updateStatusMutation.mutate({ quoteId: quote.id, status: value })}
+                      >
+                        <SelectTrigger 
+                          className={`w-[120px] h-8 text-xs ${
+                            quote.status === 'pending' ? 'bg-secondary text-secondary-foreground' :
+                            quote.status === 'accepted' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' :
+                            'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
+                          }`}
+                          data-testid={`select-status-${quote.id}`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendente</SelectItem>
+                          <SelectItem value="accepted">Aceito</SelectItem>
+                          <SelectItem value="rejected">Recusado</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <div className="flex gap-1">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setLocation(`/apresentacao/${quote.id}`)}
+                          data-testid={`button-generate-presentation-${quote.id}`}
+                          title="Ver apresentação"
+                        >
+                          <Presentation className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLocation(`/protocolo-dermalift?loadQuote=${quote.id}`)}
+                          data-testid={`button-load-quote-${quote.id}`}
+                          title="Editar orçamento"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              data-testid={`button-delete-quote-${quote.id}`}
+                              title="Excluir orçamento"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. O orçamento de {quote.patient.name} será permanentemente excluído.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteQuoteMutation.mutate(quote.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
-                  <Select
-                    value={quote.status}
-                    onValueChange={(value) => updateStatusMutation.mutate({ quoteId: quote.id, status: value })}
-                  >
-                    <SelectTrigger 
-                      className={`w-[130px] h-7 text-xs ${
-                        quote.status === 'pending' ? 'bg-secondary text-secondary-foreground' :
-                        quote.status === 'accepted' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' :
-                        'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
-                      }`}
-                      data-testid={`select-status-${quote.id}`}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendente</SelectItem>
-                      <SelectItem value="accepted">Aceito</SelectItem>
-                      <SelectItem value="rejected">Recusado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Total</span>
-                    <span className="font-semibold text-primary" data-testid={`text-total-${quote.id}`}>
-                      R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Procedimentos</span>
-                    <span className="text-xs" data-testid={`text-items-count-${quote.id}`}>
-                      {quote.items.length} {quote.items.length === 1 ? 'item' : 'itens'}
-                    </span>
-                  </div>
-                </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setLocation(`/apresentacao/${quote.id}`)}
-                    data-testid={`button-generate-presentation-${quote.id}`}
-                  >
-                    <Presentation className="h-3 w-3 mr-1" />
-                    Apresentação
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLocation(`/protocolo-dermalift?loadQuote=${quote.id}`)}
-                    data-testid={`button-load-quote-${quote.id}`}
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid={`button-delete-quote-${quote.id}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. O orçamento de {quote.patient.name} será permanentemente excluído.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteQuoteMutation.mutate(quote.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredQuotes.length)} de {filteredQuotes.length} orçamentos
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, idx, arr) => {
+                      const prevPage = arr[idx - 1];
+                      const showEllipsis = prevPage && page - prevPage > 1;
+                      
+                      return (
+                        <div key={page} className="flex items-center gap-1">
+                          {showEllipsis && (
+                            <span className="px-2 text-muted-foreground">...</span>
+                          )}
+                          <Button
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(page)}
+                            data-testid={`button-page-${page}`}
+                          >
+                            {page}
+                          </Button>
+                        </div>
+                      );
+                    })}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  data-testid="button-next-page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
