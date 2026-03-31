@@ -132,10 +132,17 @@ export default function Receituario() {
     },
     onSuccess: async (newProduct) => {
       if (inlineForm.imageFile) {
-        await uploadImageMutation.mutateAsync({
-          productId: newProduct.id,
-          file: inlineForm.imageFile,
-        });
+        try {
+          await uploadImageMutation.mutateAsync({
+            productId: newProduct.id,
+            file: inlineForm.imageFile,
+          });
+        } catch {
+          toast({
+            title: "Produto adicionado, mas a imagem não pôde ser enviada",
+            variant: "destructive",
+          });
+        }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
       setSelectedIds((prev) => {

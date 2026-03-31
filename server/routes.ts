@@ -733,6 +733,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const productId = req.params.id;
+
+      const existingProduct = await storage.getSkincareProductById(productId);
+      if (!existingProduct) {
+        res.status(404).json({ error: "Produto não encontrado" });
+        return;
+      }
+
       const timestamp = Date.now();
       const extension = req.file.originalname.split('.').pop();
       const privateDir = objectStorageService.getPrivateObjectDir();
