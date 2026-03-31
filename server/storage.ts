@@ -11,11 +11,14 @@ import {
   type Procedure,
   type InsertProcedure,
   type ClinicSettings,
-  type InsertClinicSettings
+  type InsertClinicSettings,
+  type SkincareProduct,
+  type InsertSkincareProduct,
+  type SkincareTimeOfDay,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, quotes, quoteItems, patients, patientPhotos, procedures, clinicSettings } from "@shared/schema";
+import { users, quotes, quoteItems, patients, patientPhotos, procedures, clinicSettings, skincareProducts } from "@shared/schema";
 import { eq, and, gte, sql, desc, count, inArray } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
@@ -114,6 +117,13 @@ export interface IStorage {
   // Clinic Settings methods
   getClinicSettings(): Promise<ClinicSettings | undefined>;
   updateClinicSettings(settings: InsertClinicSettings): Promise<ClinicSettings>;
+
+  // Skincare product methods
+  getSkincareProducts(timeOfDay?: SkincareTimeOfDay): Promise<SkincareProduct[]>;
+  getSkincareProductById(id: string): Promise<SkincareProduct | undefined>;
+  createSkincareProduct(product: InsertSkincareProduct): Promise<SkincareProduct>;
+  updateSkincareProduct(id: string, product: Partial<InsertSkincareProduct>): Promise<SkincareProduct | undefined>;
+  deleteSkincareProduct(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -729,6 +739,44 @@ export class MemStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getSkincareProducts(timeOfDay?: SkincareTimeOfDay): Promise<SkincareProduct[]> {
+    if (timeOfDay) {
+      return await db
+        .select()
+        .from(skincareProducts)
+        .where(eq(skincareProducts.timeOfDay, timeOfDay))
+        .orderBy(skincareProducts.displayOrder, skincareProducts.name);
+    }
+    return await db
+      .select()
+      .from(skincareProducts)
+      .orderBy(skincareProducts.displayOrder, skincareProducts.name);
+  }
+
+  async getSkincareProductById(id: string): Promise<SkincareProduct | undefined> {
+    const [product] = await db.select().from(skincareProducts).where(eq(skincareProducts.id, id));
+    return product;
+  }
+
+  async createSkincareProduct(insertProduct: InsertSkincareProduct): Promise<SkincareProduct> {
+    const [product] = await db.insert(skincareProducts).values(insertProduct).returning();
+    return product;
+  }
+
+  async updateSkincareProduct(id: string, updateData: Partial<InsertSkincareProduct>): Promise<SkincareProduct | undefined> {
+    const [updated] = await db
+      .update(skincareProducts)
+      .set(updateData)
+      .where(eq(skincareProducts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSkincareProduct(id: string): Promise<boolean> {
+    const result = await db.delete(skincareProducts).where(eq(skincareProducts.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
 

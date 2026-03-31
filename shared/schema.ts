@@ -209,3 +209,29 @@ export interface PatientWithStats extends Patient {
   acceptedBudget: number;
   lastQuoteDate?: string;
 }
+
+export const skincareTimeOfDayEnum = pgEnum("skincare_time_of_day", ["diurno", "tarde", "noturno", "especial"]);
+export const skincareTimesOfDay = ["diurno", "tarde", "noturno", "especial"] as const;
+export type SkincareTimeOfDay = typeof skincareTimesOfDay[number];
+
+export const skincareProducts = pgTable("skincare_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  usageInstructions: text("usage_instructions"),
+  imageUrl: text("image_url"),
+  timeOfDay: skincareTimeOfDayEnum("time_of_day").notNull(),
+  displayOrder: integer("display_order").notNull().default(0),
+});
+
+export const insertSkincareProductSchema = createInsertSchema(skincareProducts).omit({
+  id: true,
+}).extend({
+  name: z.string().min(1, "Nome é obrigatório"),
+  usageInstructions: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
+  timeOfDay: z.enum(skincareTimesOfDay),
+  displayOrder: z.union([z.string(), z.number()]).pipe(z.coerce.number().int()).optional(),
+});
+
+export type InsertSkincareProduct = z.infer<typeof insertSkincareProductSchema>;
+export type SkincareProduct = typeof skincareProducts.$inferSelect;

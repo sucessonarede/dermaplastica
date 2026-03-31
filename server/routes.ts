@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema, insertSkincareProductSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import multer from "multer";
@@ -651,6 +651,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting procedure:", error);
       res.status(500).json({ error: "Erro ao excluir procedimento" });
+    }
+  });
+
+  // Skincare product routes
+  app.get("/api/skincare-products", async (req: Request, res: Response) => {
+    try {
+      const products = await storage.getSkincareProducts();
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching skincare products:", error);
+      res.status(500).json({ error: "Erro ao buscar produtos" });
+    }
+  });
+
+  app.post("/api/skincare-products", async (req: Request, res: Response) => {
+    try {
+      const body = insertSkincareProductSchema.parse(req.body);
+      const product = await storage.createSkincareProduct(body);
+      res.status(201).json(product);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error creating skincare product:", error);
+        res.status(500).json({ error: "Erro ao criar produto" });
+      }
+    }
+  });
+
+  app.patch("/api/skincare-products/:id", async (req: Request, res: Response) => {
+    try {
+      const updateData = insertSkincareProductSchema.partial().parse(req.body);
+      const product = await storage.updateSkincareProduct(req.params.id, updateData);
+      if (!product) {
+        res.status(404).json({ error: "Produto não encontrado" });
+        return;
+      }
+      res.json(product);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      } else {
+        console.error("Error updating skincare product:", error);
+        res.status(500).json({ error: "Erro ao atualizar produto" });
+      }
+    }
+  });
+
+  app.delete("/api/skincare-products/:id", async (req: Request, res: Response) => {
+    try {
+      const product = await storage.getSkincareProductById(req.params.id);
+      if (product?.imageUrl) {
+        try {
+          const imagePath = product.imageUrl.replace("/product-images/", "");
+          const privateDir = objectStorageService.getPrivateObjectDir();
+          const fullPath = `${privateDir}/product-images/${imagePath}`;
+          await objectStorageService.deleteObject(fullPath);
+        } catch (err) {
+          console.error("Error deleting product image from object storage:", err);
+        }
+      }
+      const success = await storage.deleteSkincareProduct(req.params.id);
+      if (!success) {
+        res.status(404).json({ error: "Produto não encontrado" });
+        return;
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting skincare product:", error);
+      res.status(500).json({ error: "Erro ao excluir produto" });
+    }
+  });
+
+  // Upload image for a skincare product
+  app.post("/api/skincare-products/:id/image", upload.single("image"), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: "Nenhuma imagem enviada" });
+        return;
+      }
+
+      const productId = req.params.id;
+      const timestamp = Date.now();
+      const extension = req.file.originalname.split('.').pop();
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const fullPath = `${privateDir}/product-images/${productId}/${timestamp}.${extension}`;
+      const publicUrl = `/product-images/${productId}/${timestamp}.${extension}`;
+
+      await objectStorageService.uploadFromBytes(fullPath, req.file.buffer);
+
+      const product = await storage.updateSkincareProduct(productId, { imageUrl: publicUrl });
+
+      res.status(200).json({ imageUrl: publicUrl, product });
+    } catch (error: any) {
+      console.error("Error uploading product image:", error);
+      res.status(500).json({ error: "Erro ao fazer upload da imagem" });
+    }
+  });
+
+  // Serve product images
+  app.get("/product-images/*", async (req: Request, res: Response) => {
+    try {
+      const imagePath = req.path.replace("/product-images/", "");
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const fullPath = `${privateDir}/product-images/${imagePath}`;
+
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).json({ error: "Imagem não encontrada" });
+      }
+
+      await objectStorageService.downloadObject(file, res);
+    } catch (error: any) {
+      console.error("Error serving product image:", error);
+      res.status(500).json({ error: "Erro ao carregar imagem" });
     }
   });
 

@@ -26,6 +26,8 @@ Preferred communication style: Simple, everyday language.
 
 **Presentation Module:** Dynamic, fullscreen presentation accessible via `/apresentacao/:quoteId`, featuring 8 slides detailing the Dermalift methodology. Utilizes Embla Carousel for transitions. Includes a "Personalized Plan" slide displaying patient details, selected procedures with quantities, and total investment, incorporating discounts and per-procedure notes.
 
+**Receituário Module:** Skincare prescription builder at `/receituario`. Displays 4 time-of-day blocks (Tratamentos Diurnos, Tratamentos da Tarde, Tratamentos Noturnos, Tratamentos Especiais/Corporais). Allows inline creation of skincare products per block (name, usage instructions, optional image upload via Object Storage). Products are click-to-toggle selectable; selected items are highlighted. Optional patient name input. Print button uses `window.print()` with a hidden print-layout div. PDF generation via jsPDF with product images as base64, product cards with step numbers, and block headers. Products stored in `skincare_products` table using `skincare_time_of_day` enum.
+
 ### Backend Architecture
 
 **Technology Stack:** Express.js, TypeScript, Node.js, ESBuild.
@@ -56,9 +58,9 @@ Preferred communication style: Simple, everyday language.
 - Supabase PostgreSQL (via `pg` node-postgres driver with SSL)
 
 **Object Storage:**
-- Replit Object Storage for patient photos
+- Replit Object Storage for patient photos and skincare product images
 - Lazy initialization to avoid startup errors
-- Private bucket storage (`.private/patient-photos/`)
+- Private bucket storage (`.private/patient-photos/`, `.private/product-images/`)
 
 **Development Tools:**
 - Replit-specific plugins (cartographer, dev-banner, runtime-error-modal)

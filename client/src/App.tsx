@@ -17,6 +17,7 @@ import Reports from "@/pages/Reports";
 import ClinicSettings from "@/pages/ClinicSettings";
 import Presentation from "@/pages/Presentation";
 import SavedQuotes from "@/pages/SavedQuotes";
+import Receituario from "@/pages/Receituario";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import NotFound from "@/pages/not-found";
@@ -105,6 +106,7 @@ function Router() {
         <Route path="/reports" component={Reports} />
         <Route path="/settings" component={ClinicSettings} />
         <Route path="/apresentacao" component={SavedQuotes} />
+        <Route path="/receituario" component={Receituario} />
         <Route component={NotFound} />
       </Switch>
     </ProtectedLayout>

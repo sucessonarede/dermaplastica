@@ -7,6 +7,7 @@ import {
   Package,
   Calculator,
   Presentation as PresentationIcon,
+  ClipboardList,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +54,11 @@ const menuItems = [
     title: "Relatórios",
     url: "/reports",
     icon: FileText,
+  },
+  {
+    title: "Receituário",
+    url: "/receituario",
+    icon: ClipboardList,
   },
 ];
 
