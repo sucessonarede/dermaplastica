@@ -138,7 +138,11 @@ export default function Receituario() {
         });
       }
       queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
-      setSelectedIds((prev) => new Set([...prev, newProduct.id]));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.add(newProduct.id);
+        return next;
+      });
       setAddingFor(null);
       setInlineForm({ name: "", usageInstructions: "", imageFile: null, imagePreview: null });
       toast({ title: "Produto adicionado!", description: newProduct.name });
