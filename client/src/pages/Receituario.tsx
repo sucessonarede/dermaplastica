@@ -132,7 +132,7 @@ interface SortableProductItemProps {
   colorHex: string;
   bgClass: string;
   ringClass: string;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, block: SkincareTimeOfDay) => void;
   onDelete: (id: string) => void;
   onUpdateBlocks: (id: string, blocks: SkincareTimeOfDay[]) => void;
 }
@@ -203,7 +203,7 @@ function SortableProductItem({
       {/* Checkbox + content area */}
       <div
         className="flex items-start gap-2 flex-1 min-w-0"
-        onClick={() => onToggle(product.id)}
+        onClick={() => onToggle(product.id, currentBlock)}
       >
         <div
           className="flex-shrink-0 mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors"
@@ -413,7 +413,9 @@ export default function Receituario() {
       queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        next.add(newProduct.id);
+        for (const block of newProduct.timeOfDay) {
+          next.add(selKey(newProduct.id, block as SkincareTimeOfDay));
+        }
         return next;
       });
       setAddingFor(null);
@@ -452,7 +454,9 @@ export default function Receituario() {
       queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        next.delete(id);
+        for (const block of skincareTimesOfDay) {
+          next.delete(selKey(id, block));
+        }
         return next;
       });
       toast({ title: "Produto removido" });
@@ -487,13 +491,16 @@ export default function Receituario() {
     });
   };
 
-  const toggleProduct = (id: string) => {
+  const selKey = (id: string, block: SkincareTimeOfDay) => `${id}:${block}`;
+
+  const toggleProduct = (id: string, block: SkincareTimeOfDay) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+      const key = selKey(id, block);
+      if (next.has(key)) {
+        next.delete(key);
       } else {
-        next.add(id);
+        next.add(key);
       }
       return next;
     });
@@ -595,7 +602,7 @@ export default function Receituario() {
     const result: SkincareProduct[] = [];
     for (const tod of skincareTimesOfDay) {
       for (const p of getBlockProducts(tod)) {
-        if (selectedIds.has(p.id) && !seen.has(p.id)) {
+        if (selectedIds.has(selKey(p.id, tod)) && !seen.has(p.id)) {
           seen.add(p.id);
           result.push(p);
         }
@@ -604,7 +611,10 @@ export default function Receituario() {
     return result;
   };
 
-  const selectedCount = selectedIds.size;
+  // Count unique product IDs that are selected in at least one block
+  const selectedCount = new Set(
+    Array.from(selectedIds).map((key) => key.split(":")[0])
+  ).size;
 
   const printContent = (
     <div id="receituario-print-area">
@@ -618,7 +628,7 @@ export default function Receituario() {
       )}
       {blocksConfig.map((block) => {
         const blockProducts = getBlockProducts(block.key).filter((p) =>
-          selectedIds.has(p.id)
+          selectedIds.has(selKey(p.id, block.key))
         );
         if (blockProducts.length === 0) return null;
         return (
@@ -781,7 +791,7 @@ export default function Receituario() {
                             key={product.id}
                             product={product}
                             currentBlock={block.key}
-                            isSelected={selectedIds.has(product.id)}
+                            isSelected={selectedIds.has(selKey(product.id, block.key))}
                             colorHex={block.colorHex}
                             bgClass={block.bgClass}
                             ringClass={block.ringClass}
