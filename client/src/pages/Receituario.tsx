@@ -20,6 +20,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,90 +42,111 @@ import {
   Download,
   ImagePlus,
   Trash2,
-  X,
   Loader2,
   GripVertical,
+  Layers,
 } from "lucide-react";
 import type { SkincareProduct, SkincareTimeOfDay, ClinicSettings } from "@shared/schema";
+import { skincareTimesOfDay } from "@shared/schema";
 import { generateReceituarioPDF } from "@/lib/generateReceituarioPDF";
 
 const blocksConfig: {
   key: SkincareTimeOfDay;
   label: string;
+  shortLabel: string;
   description: string;
   icon: React.ElementType;
   colorHex: string;
   bgClass: string;
   ringClass: string;
   textClass: string;
+  dotClass: string;
 }[] = [
   {
     key: "diurno",
     label: "Tratamentos Diurnos",
+    shortLabel: "Diurno",
     description: "Rotina da manhã",
     icon: Sun,
     colorHex: "#d97706",
     bgClass: "bg-amber-500/10",
     ringClass: "ring-amber-500/30",
     textClass: "text-amber-600 dark:text-amber-400",
+    dotClass: "bg-amber-400",
   },
   {
     key: "tarde",
     label: "Tratamentos da Tarde",
+    shortLabel: "Tarde",
     description: "Rotina do meio-dia / tarde",
     icon: Sunset,
     colorHex: "#ea580c",
     bgClass: "bg-orange-500/10",
     ringClass: "ring-orange-500/30",
     textClass: "text-orange-600 dark:text-orange-400",
+    dotClass: "bg-orange-400",
   },
   {
     key: "noturno",
     label: "Tratamentos Noturnos",
+    shortLabel: "Noturno",
     description: "Rotina da noite",
     icon: Moon,
     colorHex: "#7c3aed",
     bgClass: "bg-violet-500/10",
     ringClass: "ring-violet-500/30",
     textClass: "text-violet-600 dark:text-violet-400",
+    dotClass: "bg-violet-400",
   },
   {
     key: "especial",
     label: "Tratamentos Especiais / Corporais",
+    shortLabel: "Especial",
     description: "Tratamentos complementares",
     icon: Sparkles,
     colorHex: "#0891b2",
     bgClass: "bg-cyan-500/10",
     ringClass: "ring-cyan-500/30",
     textClass: "text-cyan-600 dark:text-cyan-400",
+    dotClass: "bg-cyan-400",
   },
 ];
+
+const blockByKey = Object.fromEntries(blocksConfig.map((b) => [b.key, b])) as Record<
+  SkincareTimeOfDay,
+  (typeof blocksConfig)[0]
+>;
 
 interface InlineAddForm {
   name: string;
   usageInstructions: string;
   imageFile: File | null;
   imagePreview: string | null;
+  selectedBlocks: Set<SkincareTimeOfDay>;
 }
 
 interface SortableProductItemProps {
   product: SkincareProduct;
+  currentBlock: SkincareTimeOfDay;
   isSelected: boolean;
   colorHex: string;
   bgClass: string;
   ringClass: string;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateBlocks: (id: string, blocks: SkincareTimeOfDay[]) => void;
 }
 
 function SortableProductItem({
   product,
+  currentBlock,
   isSelected,
   colorHex,
   bgClass,
   ringClass,
   onToggle,
   onDelete,
+  onUpdateBlocks,
 }: SortableProductItemProps) {
   const {
     attributes,
@@ -135,6 +164,21 @@ function SortableProductItem({
     zIndex: isDragging ? 10 : undefined,
   };
 
+  const otherBlocks = blocksConfig.filter(
+    (b) => b.key !== currentBlock && product.timeOfDay.includes(b.key)
+  );
+
+  const toggleBlock = (blockKey: SkincareTimeOfDay, checked: boolean) => {
+    let newBlocks = [...product.timeOfDay];
+    if (checked) {
+      if (!newBlocks.includes(blockKey)) newBlocks.push(blockKey);
+    } else {
+      newBlocks = newBlocks.filter((b) => b !== blockKey);
+    }
+    if (newBlocks.length === 0) return;
+    onUpdateBlocks(product.id, newBlocks as SkincareTimeOfDay[]);
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -144,7 +188,7 @@ function SortableProductItem({
       }`}
       data-testid={`product-item-${product.id}`}
     >
-      {/* Drag handle — stops click propagation so it doesn't toggle selection */}
+      {/* Drag handle */}
       <button
         className="flex-shrink-0 mt-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors touch-none"
         {...attributes}
@@ -156,7 +200,7 @@ function SortableProductItem({
         <GripVertical className="h-4 w-4" />
       </button>
 
-      {/* Checkbox area — triggers toggle */}
+      {/* Checkbox + content area */}
       <div
         className="flex items-start gap-2 flex-1 min-w-0"
         onClick={() => onToggle(product.id)}
@@ -190,20 +234,75 @@ function SortableProductItem({
               {product.usageInstructions}
             </p>
           )}
+          {/* Other-block indicator dots */}
+          {otherBlocks.length > 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              {otherBlocks.map((b) => (
+                <span
+                  key={b.key}
+                  title={b.shortLabel}
+                  className={`inline-block h-2 w-2 rounded-full ${b.dotClass}`}
+                />
+              ))}
+              <span className="text-[10px] text-muted-foreground ml-0.5">
+                {otherBlocks.map((b) => b.shortLabel).join(", ")}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Delete button */}
-      <button
-        className="invisible group-hover:visible flex-shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(product.id);
-        }}
-        data-testid={`button-delete-product-${product.id}`}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
+      {/* Action buttons (appear on hover) */}
+      <div className="invisible group-hover:visible flex items-center gap-0.5 flex-shrink-0">
+        {/* Manage blocks dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+              data-testid={`button-manage-blocks-${product.id}`}
+              title="Gerenciar blocos"
+            >
+              <Layers className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuLabel className="text-xs">Exibir nos blocos</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {blocksConfig.map((b) => {
+              const isChecked = product.timeOfDay.includes(b.key);
+              const isOnlyBlock = isChecked && product.timeOfDay.length === 1;
+              return (
+                <DropdownMenuCheckboxItem
+                  key={b.key}
+                  checked={isChecked}
+                  disabled={isOnlyBlock}
+                  onCheckedChange={(checked) => toggleBlock(b.key, checked)}
+                  data-testid={`checkbox-block-${b.key}-${product.id}`}
+                >
+                  <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${b.dotClass}`} />
+                  {b.shortLabel}
+                  {isOnlyBlock && (
+                    <span className="ml-1 text-[10px] text-muted-foreground">(mín.)</span>
+                  )}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Delete button */}
+        <button
+          className="rounded p-0.5 text-muted-foreground hover:text-destructive"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(product.id);
+          }}
+          data-testid={`button-delete-product-${product.id}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -219,6 +318,7 @@ export default function Receituario() {
     usageInstructions: "",
     imageFile: null,
     imagePreview: null,
+    selectedBlocks: new Set(),
   });
   const [isPDFLoading, setIsPDFLoading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -231,6 +331,9 @@ export default function Receituario() {
     especial: [],
   });
 
+  // Track product IDs snapshot to detect real changes (not just re-renders)
+  const prevProductKeyRef = useRef<string>("");
+
   const { data: products = [], isLoading } = useQuery<SkincareProduct[]>({
     queryKey: ["/api/skincare-products"],
   });
@@ -239,24 +342,33 @@ export default function Receituario() {
     queryKey: ["/api/clinic-settings"],
   });
 
-  // Sync server data into local order (only on first load or when product set changes)
+  // Sync server data into local order only when product set actually changes
   useEffect(() => {
-    const newOrder: Record<SkincareTimeOfDay, string[]> = {
-      diurno: [],
-      tarde: [],
-      noturno: [],
-      especial: [],
-    };
-    for (const tod of ["diurno", "tarde", "noturno", "especial"] as SkincareTimeOfDay[]) {
-      const blockProducts = products
-        .filter((p) => p.timeOfDay === tod)
-        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-      newOrder[tod] = blockProducts.map((p) => p.id);
-    }
-    setLocalOrder(newOrder);
+    const productKey = products
+      .map((p) => `${p.id}:${p.displayOrder}:${p.timeOfDay.sort().join(",")}`)
+      .sort()
+      .join("|");
+    if (productKey === prevProductKeyRef.current) return;
+    prevProductKeyRef.current = productKey;
+
+    setLocalOrder((prev) => {
+      const next = { ...prev };
+      for (const tod of skincareTimesOfDay) {
+        const blockProducts = products
+          .filter((p) => p.timeOfDay.includes(tod))
+          .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+
+        // Keep existing order for products already in the list; append new ones
+        const existing = prev[tod].filter((id) => blockProducts.some((p) => p.id === id));
+        const newOnes = blockProducts
+          .filter((p) => !prev[tod].includes(p.id))
+          .map((p) => p.id);
+        next[tod] = [...existing, ...newOnes];
+      }
+      return next;
+    });
   }, [products]);
 
-  // Sensors: require 8px movement before drag starts (so clicks still work)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -279,7 +391,7 @@ export default function Receituario() {
     mutationFn: async (data: {
       name: string;
       usageInstructions: string;
-      timeOfDay: SkincareTimeOfDay;
+      timeOfDay: SkincareTimeOfDay[];
     }) => {
       const res = await apiRequest("POST", "/api/skincare-products", data);
       return (await res.json()) as SkincareProduct;
@@ -305,11 +417,30 @@ export default function Receituario() {
         return next;
       });
       setAddingFor(null);
-      setInlineForm({ name: "", usageInstructions: "", imageFile: null, imagePreview: null });
+      setInlineForm({
+        name: "",
+        usageInstructions: "",
+        imageFile: null,
+        imagePreview: null,
+        selectedBlocks: new Set(),
+      });
       toast({ title: "Produto adicionado!", description: newProduct.name });
     },
     onError: () => {
       toast({ title: "Erro ao adicionar produto", variant: "destructive" });
+    },
+  });
+
+  const updateBlocksMutation = useMutation({
+    mutationFn: async ({ id, timeOfDay }: { id: string; timeOfDay: SkincareTimeOfDay[] }) => {
+      await apiRequest("PATCH", `/api/skincare-products/${id}`, { timeOfDay });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar blocos", variant: "destructive" });
+      queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
     },
   });
 
@@ -375,21 +506,58 @@ export default function Receituario() {
     setInlineForm((f) => ({ ...f, imageFile: file, imagePreview: preview }));
   };
 
-  const handleAddProduct = async (timeOfDay: SkincareTimeOfDay) => {
+  const handleStartAdding = (blockKey: SkincareTimeOfDay) => {
+    setAddingFor(blockKey);
+    setInlineForm({
+      name: "",
+      usageInstructions: "",
+      imageFile: null,
+      imagePreview: null,
+      selectedBlocks: new Set([blockKey]),
+    });
+  };
+
+  const handleCancelAdding = () => {
+    setAddingFor(null);
+    setInlineForm({
+      name: "",
+      usageInstructions: "",
+      imageFile: null,
+      imagePreview: null,
+      selectedBlocks: new Set(),
+    });
+  };
+
+  const toggleInlineBlock = (blockKey: SkincareTimeOfDay) => {
+    setInlineForm((f) => {
+      const next = new Set(f.selectedBlocks);
+      if (next.has(blockKey)) {
+        if (next.size > 1) next.delete(blockKey);
+      } else {
+        next.add(blockKey);
+      }
+      return { ...f, selectedBlocks: next };
+    });
+  };
+
+  const handleAddProduct = async () => {
     if (!inlineForm.name.trim()) {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (inlineForm.selectedBlocks.size === 0) {
+      toast({ title: "Selecione ao menos um bloco", variant: "destructive" });
       return;
     }
     createProductMutation.mutate({
       name: inlineForm.name.trim(),
       usageInstructions: inlineForm.usageInstructions.trim(),
-      timeOfDay,
+      timeOfDay: Array.from(inlineForm.selectedBlocks),
     });
   };
 
   const handlePrint = () => {
-    const selected = products.filter((p) => selectedIds.has(p.id));
-    if (selected.length === 0) {
+    if (selectedIds.size === 0) {
       toast({ title: "Selecione ao menos um produto", variant: "destructive" });
       return;
     }
@@ -416,18 +584,21 @@ export default function Receituario() {
     }
   };
 
-  // Returns products in local drag-and-drop order (for a given block or all)
   const getBlockProducts = (tod: SkincareTimeOfDay): SkincareProduct[] => {
     const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
     return localOrder[tod].map((id) => productMap[id]).filter(Boolean) as SkincareProduct[];
   };
 
-  // Returns ALL selected products across all blocks, in display order
+  // Returns ALL selected products across all blocks in display order (deduplicated)
   const getOrderedSelectedProducts = (): SkincareProduct[] => {
+    const seen = new Set<string>();
     const result: SkincareProduct[] = [];
-    for (const tod of ["diurno", "tarde", "noturno", "especial"] as SkincareTimeOfDay[]) {
+    for (const tod of skincareTimesOfDay) {
       for (const p of getBlockProducts(tod)) {
-        if (selectedIds.has(p.id)) result.push(p);
+        if (selectedIds.has(p.id) && !seen.has(p.id)) {
+          seen.add(p.id);
+          result.push(p);
+        }
       }
     }
     return result;
@@ -609,17 +780,22 @@ export default function Receituario() {
                           <SortableProductItem
                             key={product.id}
                             product={product}
+                            currentBlock={block.key}
                             isSelected={selectedIds.has(product.id)}
                             colorHex={block.colorHex}
                             bgClass={block.bgClass}
                             ringClass={block.ringClass}
                             onToggle={toggleProduct}
                             onDelete={(id) => deleteProductMutation.mutate(id)}
+                            onUpdateBlocks={(id, blocks) =>
+                              updateBlocksMutation.mutate({ id, timeOfDay: blocks })
+                            }
                           />
                         ))}
                       </SortableContext>
                     </DndContext>
 
+                    {/* Inline add form */}
                     {isAddingHere && (
                       <div className="rounded-md border bg-muted/30 p-3 space-y-2 mt-1">
                         <Input
@@ -631,6 +807,10 @@ export default function Receituario() {
                           className="text-sm h-8"
                           data-testid="input-new-product-name"
                           autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddProduct();
+                            if (e.key === "Escape") handleCancelAdding();
+                          }}
                         />
                         <Textarea
                           placeholder="Modo de uso (opcional)"
@@ -645,6 +825,40 @@ export default function Receituario() {
                           rows={2}
                           data-testid="input-new-product-instructions"
                         />
+
+                        {/* Block selector */}
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                            Exibir nos blocos
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {blocksConfig.map((b) => {
+                              const isChecked = inlineForm.selectedBlocks.has(b.key);
+                              return (
+                                <button
+                                  key={b.key}
+                                  type="button"
+                                  onClick={() => toggleInlineBlock(b.key)}
+                                  data-testid={`block-checkbox-${b.key}`}
+                                  className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs border transition-colors ${
+                                    isChecked
+                                      ? "border-transparent text-white"
+                                      : "border-border text-muted-foreground hover:text-foreground"
+                                  }`}
+                                  style={
+                                    isChecked
+                                      ? { backgroundColor: blockByKey[b.key].colorHex }
+                                      : {}
+                                  }
+                                >
+                                  <span className={`h-1.5 w-1.5 rounded-full ${isChecked ? "bg-white/60" : b.dotClass}`} />
+                                  {b.shortLabel}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         <div className="flex items-center gap-2">
                           <input
                             ref={imageInputRef}
@@ -658,7 +872,7 @@ export default function Receituario() {
                             variant="outline"
                             size="sm"
                             onClick={() => imageInputRef.current?.click()}
-                            className="text-xs h-7"
+                            className="text-xs"
                             data-testid="button-select-image"
                           >
                             <ImagePlus className="h-3 w-3 mr-1" />
@@ -668,20 +882,21 @@ export default function Receituario() {
                             <img
                               src={inlineForm.imagePreview}
                               alt="preview"
-                              className="h-8 w-8 rounded object-cover border"
+                              className="h-7 w-7 rounded object-cover"
                             />
                           )}
                         </div>
-                        <div className="flex gap-2 pt-1">
+
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
-                            className="flex-1 h-7 text-xs"
-                            onClick={() => handleAddProduct(block.key)}
+                            onClick={handleAddProduct}
                             disabled={createProductMutation.isPending}
+                            className="flex-1 text-xs"
                             data-testid="button-confirm-add-product"
                           >
                             {createProductMutation.isPending ? (
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                             ) : (
                               <Check className="h-3 w-3 mr-1" />
                             )}
@@ -690,41 +905,26 @@ export default function Receituario() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => {
-                              setAddingFor(null);
-                              setInlineForm({
-                                name: "",
-                                usageInstructions: "",
-                                imageFile: null,
-                                imagePreview: null,
-                              });
-                            }}
+                            onClick={handleCancelAdding}
+                            className="text-xs"
                             data-testid="button-cancel-add-product"
                           >
-                            <X className="h-3 w-3" />
+                            Cancelar
                           </Button>
                         </div>
                       </div>
                     )}
 
+                    {/* Add item button */}
                     {!isAddingHere && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="mt-auto justify-start text-muted-foreground text-xs h-8 w-full"
-                        onClick={() => {
-                          setAddingFor(block.key);
-                          setInlineForm({
-                            name: "",
-                            usageInstructions: "",
-                            imageFile: null,
-                            imagePreview: null,
-                          });
-                        }}
-                        data-testid={`button-add-item-${block.key}`}
+                        className="mt-1 text-xs text-muted-foreground justify-start"
+                        onClick={() => handleStartAdding(block.key)}
+                        data-testid={`button-add-product-${block.key}`}
                       >
-                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        <Plus className="h-3 w-3 mr-1" />
                         Adicionar item
                       </Button>
                     )}

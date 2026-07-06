@@ -89,7 +89,8 @@ export const generateReceituarioPDF = async (data: ReceituarioData) => {
   };
 
   for (const p of selectedProducts) {
-    grouped[p.timeOfDay].push(p);
+    const firstBlock = timeOfDayOrder.find((tod) => p.timeOfDay.includes(tod));
+    if (firstBlock) grouped[firstBlock].push(p);
   }
 
   let stepNumber = 1;

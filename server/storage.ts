@@ -119,7 +119,7 @@ export interface IStorage {
   updateClinicSettings(settings: InsertClinicSettings): Promise<ClinicSettings>;
 
   // Skincare product methods
-  getSkincareProducts(timeOfDay?: SkincareTimeOfDay): Promise<SkincareProduct[]>;
+  getSkincareProducts(): Promise<SkincareProduct[]>;
   getSkincareProductById(id: string): Promise<SkincareProduct | undefined>;
   createSkincareProduct(product: InsertSkincareProduct): Promise<SkincareProduct>;
   updateSkincareProduct(id: string, product: Partial<InsertSkincareProduct>): Promise<SkincareProduct | undefined>;
@@ -741,14 +741,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async getSkincareProducts(timeOfDay?: SkincareTimeOfDay): Promise<SkincareProduct[]> {
-    if (timeOfDay) {
-      return await db
-        .select()
-        .from(skincareProducts)
-        .where(eq(skincareProducts.timeOfDay, timeOfDay))
-        .orderBy(skincareProducts.displayOrder, skincareProducts.name);
-    }
+  async getSkincareProducts(): Promise<SkincareProduct[]> {
     return await db
       .select()
       .from(skincareProducts)

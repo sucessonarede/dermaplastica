@@ -219,7 +219,7 @@ export const skincareProducts = pgTable("skincare_products", {
   name: text("name").notNull(),
   usageInstructions: text("usage_instructions"),
   imageUrl: text("image_url"),
-  timeOfDay: skincareTimeOfDayEnum("time_of_day").notNull(),
+  timeOfDay: skincareTimeOfDayEnum("time_of_day").array().notNull().default([]),
   displayOrder: integer("display_order").notNull().default(0),
 });
 
@@ -229,7 +229,7 @@ export const insertSkincareProductSchema = createInsertSchema(skincareProducts).
   name: z.string().min(1, "Nome é obrigatório"),
   usageInstructions: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
-  timeOfDay: z.enum(skincareTimesOfDay),
+  timeOfDay: z.array(z.enum(skincareTimesOfDay)).min(1, "Selecione ao menos um período"),
   displayOrder: z.union([z.string(), z.number()]).pipe(z.coerce.number().int()).optional(),
 });
 
