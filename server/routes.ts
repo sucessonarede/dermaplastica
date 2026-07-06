@@ -680,6 +680,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/skincare-products/reorder", async (req: Request, res: Response) => {
+    try {
+      const { ids } = req.body as { ids: string[] };
+      if (!Array.isArray(ids)) {
+        res.status(400).json({ error: "ids deve ser um array" });
+        return;
+      }
+      await Promise.all(
+        ids.map((id, index) => storage.updateSkincareProduct(id, { displayOrder: index }))
+      );
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error reordering skincare products:", error);
+      res.status(500).json({ error: "Erro ao reordenar produtos" });
+    }
+  });
+
   app.patch("/api/skincare-products/:id", async (req: Request, res: Response) => {
     try {
       const updateData = insertSkincareProductSchema.partial().parse(req.body);
