@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Upload, Save, Lock } from "lucide-react";
+import { Building2, Upload, Save, Lock, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,9 @@ type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
 export default function ClinicSettings() {
   const { toast } = useToast();
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Query to fetch clinic settings
   const { data: settings, isLoading } = useQuery<ClinicSettings | null>({
@@ -360,11 +363,22 @@ export default function ClinicSettings() {
                       <FormItem>
                         <FormLabel>Senha Atual</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            type="password" 
-                            data-testid="input-current-password"
-                          />
+                          <div className="relative">
+                            <Input 
+                              {...field} 
+                              type={showCurrentPassword ? "text" : "password"}
+                              className="pr-10"
+                              data-testid="input-current-password"
+                            />
+                            <button
+                              type="button"
+                              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowCurrentPassword((v) => !v)}
+                              tabIndex={-1}
+                            >
+                              {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -378,11 +392,22 @@ export default function ClinicSettings() {
                       <FormItem>
                         <FormLabel>Nova Senha</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            type="password" 
-                            data-testid="input-new-password"
-                          />
+                          <div className="relative">
+                            <Input 
+                              {...field} 
+                              type={showNewPassword ? "text" : "password"}
+                              className="pr-10"
+                              data-testid="input-new-password"
+                            />
+                            <button
+                              type="button"
+                              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowNewPassword((v) => !v)}
+                              tabIndex={-1}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -396,11 +421,22 @@ export default function ClinicSettings() {
                       <FormItem>
                         <FormLabel>Confirmar Nova Senha</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            type="password" 
-                            data-testid="input-confirm-password"
-                          />
+                          <div className="relative">
+                            <Input 
+                              {...field} 
+                              type={showConfirmPassword ? "text" : "password"}
+                              className="pr-10"
+                              data-testid="input-confirm-password"
+                            />
+                            <button
+                              type="button"
+                              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowConfirmPassword((v) => !v)}
+                              tabIndex={-1}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
