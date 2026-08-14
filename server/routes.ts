@@ -1,11 +1,10 @@
 import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema, insertSkincareProductSchema } from "@shared/schema";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema, insertSkincareProductSchema } from "../shared/schema";
 import { z } from "zod";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import multer from "multer";
-import { ObjectStorageService, objectStorageClient, parseObjectPath } from "./objectStorage";
+import { objectStorageService } from "./objectStorage";
 
 // Schema for creating a quote with items
 const createQuoteBodySchema = z.object({
@@ -20,6 +19,8 @@ const createQuoteBodySchema = z.object({
   bonusList: z.array(z.string()).optional(),
   status: z.string().optional(),
   notes: z.string().optional().nullable(),
+  // Áreas do mapa facial marcadas por pilar (ilustrativo, independe dos itens)
+  faceZones: z.record(z.string(), z.array(z.string())).optional().nullable(),
   items: z.array(z.object({
     procedureId: z.string(),
     quantity: z.number().positive(),
@@ -71,14 +72,12 @@ const patientsQuerySchema = z.object({
   path: ["minBudget"],
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   // prefix all routes with /api
 
   // Configure multer for file uploads (memory storage)
   const upload = multer({ storage: multer.memoryStorage() });
 
-  // Initialize Object Storage Service
-  const objectStorageService = new ObjectStorageService();
 
   // Authentication routes
   app.post("/api/auth/register", async (req: Request, res: Response) => {
@@ -248,6 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bonusList: body.bonusList || [],
         status: (body.status || "pending") as "pending" | "accepted" | "rejected",
         notes: body.notes,
+        faceZones: body.faceZones ?? undefined,
       };
       
       const quote = await storage.createQuote(quoteData, body.items);
@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const publicUrl = `/patient-photos/${patientId}/${timestamp}.${extension}`;
       
       // Upload to object storage
-      await objectStorageService.uploadFromBytes(fullPath, req.file.buffer);
+      await objectStorageService.uploadFromBytes(fullPath, req.file.buffer, req.file.mimetype);
       
       // Create photo record in database
       const photo = await storage.createPatientPhoto({
@@ -533,17 +533,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const photoPath = req.path.replace("/patient-photos/", "");
       const privateDir = objectStorageService.getPrivateObjectDir();
       const fullPath = `${privateDir}/patient-photos/${photoPath}`;
-      
-      const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const file = bucket.file(objectName);
-      
-      const [exists] = await file.exists();
-      if (!exists) {
+
+      const served = await objectStorageService.serveObject(fullPath, res);
+      if (!served) {
         return res.status(404).json({ error: "Foto não encontrada" });
       }
-      
-      await objectStorageService.downloadObject(file, res);
     } catch (error: any) {
       console.error("Error serving patient photo:", error);
       res.status(500).json({ error: "Erro ao carregar foto" });
@@ -763,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fullPath = `${privateDir}/product-images/${productId}/${timestamp}.${extension}`;
       const publicUrl = `/product-images/${productId}/${timestamp}.${extension}`;
 
-      await objectStorageService.uploadFromBytes(fullPath, req.file.buffer);
+      await objectStorageService.uploadFromBytes(fullPath, req.file.buffer, req.file.mimetype);
 
       const product = await storage.updateSkincareProduct(productId, { imageUrl: publicUrl });
 
@@ -781,16 +775,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const privateDir = objectStorageService.getPrivateObjectDir();
       const fullPath = `${privateDir}/product-images/${imagePath}`;
 
-      const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const file = bucket.file(objectName);
-
-      const [exists] = await file.exists();
-      if (!exists) {
+      const served = await objectStorageService.serveObject(fullPath, res);
+      if (!served) {
         return res.status(404).json({ error: "Imagem não encontrada" });
       }
-
-      await objectStorageService.downloadObject(file, res);
     } catch (error: any) {
       console.error("Error serving product image:", error);
       res.status(500).json({ error: "Erro ao carregar imagem" });
@@ -823,7 +811,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-
-  return httpServer;
 }

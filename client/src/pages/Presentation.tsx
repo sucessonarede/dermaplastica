@@ -24,8 +24,18 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
+import FaceMap, { zoneChipsCompact } from "@/components/FaceMap";
 
 type DermaliftProtocol = "sustentacao" | "estruturacao" | "embelezamento" | "revitalizacao";
+
+/** Título e cor de cada pilar, para o slide de áreas tratadas. */
+const PILLARS: Array<{ key: string; title: string; color: string }> = [
+  { key: "sustentacao", title: "Sustentação", color: "hsl(var(--ring))" },
+  { key: "estruturacao", title: "Estruturação", color: "hsl(var(--chart-2))" },
+  { key: "embelezamento", title: "Embelezamento", color: "hsl(var(--chart-3))" },
+  { key: "revitalizacao", title: "Revitalização da Pele", color: "hsl(var(--chart-4))" },
+  { key: "alem_da_face", title: "Além da Face", color: "hsl(var(--chart-5))" },
+];
 
 interface SavedQuote {
   id: string;
@@ -39,6 +49,7 @@ interface SavedQuote {
   status: string;
   createdAt: string;
   notes?: string | null;
+  faceZones?: Record<string, string[]> | null;
   patient: {
     id: string;
     name: string;
@@ -199,6 +210,12 @@ export default function Presentation() {
       </div>
     );
   }
+
+  // Só entram no slide os pilares que o profissional marcou.
+  const pillarsWithZones = PILLARS.map((p) => ({
+    ...p,
+    zones: quote.faceZones?.[p.key] ?? [],
+  })).filter((p) => p.zones.length > 0);
 
   const slides = [
     {
@@ -420,6 +437,62 @@ export default function Presentation() {
         </div>
       )
     },
+    ...(pillarsWithZones.length > 0
+      ? [
+          {
+            id: 55,
+            component: (
+              <div className="flex flex-col items-center justify-center h-full px-8 py-20">
+                <div className="w-full max-w-6xl space-y-8">
+                  <div className="text-center">
+                    <h2 className="text-4xl font-bold">Áreas do seu tratamento</h2>
+                    <p className="mt-2 text-muted-foreground">
+                      Onde vamos atuar em cada pilar do protocolo
+                    </p>
+                  </div>
+                  <div
+                    className="grid gap-6"
+                    style={{
+                      gridTemplateColumns: `repeat(${Math.min(pillarsWithZones.length, 3)}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {pillarsWithZones.map((pillar) => (
+                      <Card key={pillar.key} className="p-5">
+                        <h3
+                          className="mb-3 text-center text-lg font-semibold"
+                          style={{ color: pillar.color }}
+                        >
+                          {pillar.title}
+                        </h3>
+                        <FaceMap
+                          value={pillar.zones}
+                          accent={pillar.color}
+                          readOnly
+                          showChips={false}
+                        />
+                        <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                          {zoneChipsCompact(pillar.zones, 8).chips.map((chip) => (
+                            <span
+                              key={chip}
+                              className="rounded-full px-2.5 py-1 text-xs font-medium"
+                              style={{
+                                color: pillar.color,
+                                backgroundColor: `color-mix(in srgb, ${pillar.color} 14%, transparent)`,
+                              }}
+                            >
+                              {chip}
+                            </span>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+        ]
+      : []),
     {
       id: 6,
       component: (

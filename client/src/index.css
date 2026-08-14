@@ -26,7 +26,7 @@
 
   --card-border: 0 0% 93%;
 
-  --sidebar: 0 0% 96%;
+  --sidebar: 0 0% 100%;
 
   --sidebar-foreground: 0 0% 13%;
 
@@ -75,6 +75,8 @@
   --chart-3: 17 100% 61%;
   --chart-4: 142 76% 36%;
   --chart-5: 38 92% 50%;
+  /* Barra do gráfico de faturamento — validado contra a superfície clara */
+  --chart-bar: 275 78% 40%;
 
   --font-sans: Inter, sans-serif;
   --font-serif: Poppins, serif;
@@ -193,6 +195,8 @@
   --chart-3: 17 100% 70%;
   --chart-4: 142 76% 55%;
   --chart-5: 38 92% 65%;
+  /* Barra do gráfico de faturamento — passo mais claro, legível no escuro */
+  --chart-bar: 275 78% 65%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.30);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.35);
@@ -363,5 +367,34 @@
   .embla__slide {
     flex: 0 0 100%;
     min-width: 0;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Fundo do app                                                        */
+  /* Malha de gradientes reproduzindo o fundo de referência: rosa quente */
+  /* no canto superior esquerdo, azul-lavanda no centro/direita e menta  */
+  /* no inferior direito. Feito em CSS para escalar em qualquer tela sem */
+  /* carregar imagem.                                                    */
+  /* ------------------------------------------------------------------ */
+  .app-canvas {
+    background-color: #eef2fb;
+    background-image:
+      radial-gradient(75% 65% at 0% 0%, #faedf1 0%, rgba(250, 237, 241, 0) 62%),
+      radial-gradient(65% 60% at 100% 6%, #e2ecfd 0%, rgba(226, 236, 253, 0) 66%),
+      radial-gradient(70% 65% at 100% 100%, #e3f5eb 0%, rgba(227, 245, 235, 0) 62%),
+      radial-gradient(60% 55% at 22% 88%, #e8f0fd 0%, rgba(232, 240, 253, 0) 62%);
+    background-attachment: fixed;
+  }
+
+  /* No escuro a mesma malha, em tons profundos: mantém a identidade sem
+     clarear a tela. */
+  .dark .app-canvas {
+    background-color: hsl(0 0% 7%);
+    background-image:
+      radial-gradient(75% 65% at 0% 0%, hsl(320 30% 12%) 0%, hsl(320 30% 12% / 0) 62%),
+      radial-gradient(65% 60% at 100% 6%, hsl(230 35% 13%) 0%, hsl(230 35% 13% / 0) 66%),
+      radial-gradient(70% 65% at 100% 100%, hsl(160 25% 11%) 0%, hsl(160 25% 11% / 0) 62%),
+      radial-gradient(60% 55% at 22% 88%, hsl(235 30% 11%) 0%, hsl(235 30% 11% / 0) 62%);
+    background-attachment: fixed;
   }
 }

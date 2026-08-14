@@ -4,3 +4,21 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+*.tgz
+
+# ambiente
+.env
+.env.local
+.env.*.local
+
+# vercel
+.vercel
+
+# storage local (fallback de desenvolvimento)
+.local-storage
+
+# transferências temporárias
+.tmp_transfer
+
+# pasta de descarte (apagar manualmente)
+_to_delete

@@ -197,7 +197,7 @@ export default function Procedures() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Procedimentos</h1>
+          <h1 className="font-serif text-[28px] font-bold tracking-tight text-foreground">Procedimentos</h1>
           <p className="text-muted-foreground">Gerencie procedimentos, pacotes e materiais</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
@@ -396,7 +396,7 @@ export default function Procedures() {
           </div>
         ) : (
           filteredProcedures.map((procedure) => (
-            <Card key={procedure.id} className="hover-elevate ring-1 ring-[hsl(var(--chart-3))]/20" data-testid={`card-procedure-${procedure.id}`}>
+            <Card key={procedure.id} className="hover-elevate border-border/60" data-testid={`card-procedure-${procedure.id}`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   {/* Order Badge */}

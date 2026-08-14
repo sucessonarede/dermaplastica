@@ -15,7 +15,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PatientPhoto {
   id: string;
@@ -312,7 +312,7 @@ export default function Patients() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Pacientes</h1>
+          <h1 className="font-serif text-[28px] font-bold tracking-tight text-foreground">Pacientes</h1>
           <p className="text-muted-foreground">Gerencie seus pacientes e leads</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
@@ -520,19 +520,34 @@ export default function Patients() {
       </div>
 
       <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar paciente..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            data-testid="input-search-patient"
-          />
+        {/* Busca e filtros dividem a mesma linha — economiza uma faixa inteira */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+            <Input
+              placeholder="Buscar paciente..."
+              className="bg-card pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-patient"
+            />
+          </div>
+
+          {!showFilters && (
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(true)}
+              data-testid="button-show-filters"
+              className="h-10 shrink-0"
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              Filtros
+            </Button>
+          )}
         </div>
 
         {showFilters && (
-          <Card className="p-4">
+          <Card className="bg-card p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Filter className="h-4 w-4" />
@@ -600,157 +615,151 @@ export default function Patients() {
           </Card>
         )}
 
-        {!showFilters && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowFilters(true)}
-            data-testid="button-show-filters"
-            className="w-full md:w-auto"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Mostrar Filtros
-          </Button>
-        )}
       </div>
 
-      <div className="space-y-2">
-        {patients.length === 0 ? (
-          <div className="text-center py-12">
+      {patients.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">Nenhum paciente encontrado.</p>
-            <p className="text-sm text-muted-foreground mt-1">Adicione um paciente para começar.</p>
-          </div>
-        ) : (
-          patients.map((patient, index) => (
-            <div
-              key={patient.id}
-              className="flex items-center gap-4 p-4 rounded-md border border-border hover-elevate group"
-              data-testid={`card-patient-${patient.id}`}
-            >
-              <Avatar className="h-12 w-12">
-                <AvatarFallback className={`${
-                  index % 3 === 0 ? "bg-[hsl(var(--primary))]" :
-                  index % 3 === 1 ? "bg-[hsl(var(--chart-2))]" :
-                  "bg-[hsl(var(--chart-3))]"
-                } text-primary-foreground text-base`}>
-                  {patient.name.split(" ").slice(0, 2).map(n => n[0]).join("")}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-lg">{patient.name}</h3>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                      {patient.phone && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <Phone className="h-3.5 w-3.5" />
-                          {patient.phone}
+            <p className="mt-1 text-sm text-muted-foreground">
+              Adicione um paciente para começar.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {patients.map((patient) => {
+                const quotes = getPatientQuotes(patient.id);
+                return (
+                  <div
+                    key={patient.id}
+                    className="group flex flex-col gap-4 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center"
+                    data-testid={`card-patient-${patient.id}`}
+                  >
+                    {/* Identificação */}
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-sm text-primary">
+                          {patient.name.split(" ").slice(0, 2).map((n) => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate font-medium">{patient.name}</p>
+                          {patient.origin && (
+                            <Badge className="border-[hsl(var(--chart-2))]/30 bg-[hsl(var(--chart-2))]/15 text-xs text-[hsl(var(--chart-2))]">
+                              {patient.origin}
+                            </Badge>
+                          )}
+                          {patient.tags?.map((tag) => (
+                            <Badge
+                              key={tag}
+                              className="border-[hsl(var(--chart-3))]/30 bg-[hsl(var(--chart-3))]/15 text-xs text-[hsl(var(--chart-3))]"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
                         </div>
-                      )}
-                      {patient.email && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <Mail className="h-3.5 w-3.5" />
-                          {patient.email}
+
+                        {/* Contato numa linha só, separado por ponto */}
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                          {patient.phone && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Phone className="h-3.5 w-3.5" />
+                              {patient.phone}
+                            </span>
+                          )}
+                          {patient.city && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {patient.city}
+                            </span>
+                          )}
+                          {patient.email && (
+                            <span className="inline-flex min-w-0 items-center gap-1.5">
+                              <Mail className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{patient.email}</span>
+                            </span>
+                          )}
                         </div>
-                      )}
-                      {patient.city && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {patient.city}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="h-8"
-                      onClick={() => setLocation(`/protocolo-dermalift?patient=${patient.id}`)}
-                      data-testid={`button-new-protocol-${patient.id}`}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Protocolo
-                    </Button>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => handleEdit(patient)}
-                        data-testid={`button-edit-patient-${patient.id}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(patient)}
-                        data-testid={`button-delete-patient-${patient.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {(patient.origin || (patient.tags && patient.tags.length > 0)) && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {patient.origin && (
-                        <Badge className="text-xs bg-[hsl(var(--chart-2))]/15 text-[hsl(var(--chart-2))] border-[hsl(var(--chart-2))]/30">
-                          {patient.origin}
-                        </Badge>
-                      )}
-                      {patient.tags && patient.tags.map((tag) => (
-                        <Badge key={tag} className="text-xs bg-[hsl(var(--chart-3))]/15 text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3))]/30">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {getPatientQuotes(patient.id).length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <FileText className="h-3.5 w-3.5" />
-                        <span>{getPatientQuotes(patient.id).length} orçamento{getPatientQuotes(patient.id).length > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {getPatientQuotes(patient.id).map((quote: any) => (
-                          <Button
-                            key={quote.id}
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs gap-1 hover-elevate"
-                            onClick={() => handleViewQuote(quote.id)}
-                            data-testid={`button-view-quote-${quote.id}`}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            {new Date(quote.createdAt).toLocaleDateString('pt-BR', { 
-                              day: '2-digit', 
-                              month: '2-digit',
-                              year: '2-digit'
-                            })}
-                            {quote.total && (
-                              <span className="text-[hsl(var(--primary))] font-semibold">
-                                · R$ {parseFloat(quote.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            )}
-                          </Button>
-                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
+
+                    {/* Orçamentos e ações */}
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      {quotes.length > 0 && (
+                        <div className="hidden items-center gap-1.5 lg:flex">
+                          {quotes.slice(0, 2).map((quote: any) => (
+                            <Button
+                              key={quote.id}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 gap-1 text-xs"
+                              onClick={() => handleViewQuote(quote.id)}
+                              data-testid={`button-view-quote-${quote.id}`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {new Date(quote.createdAt).toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "2-digit",
+                              })}
+                              {quote.total && (
+                                <span className="font-semibold text-primary">
+                                  · R$ {parseFloat(quote.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                </span>
+                              )}
+                            </Button>
+                          ))}
+                          {quotes.length > 2 && (
+                            <span className="text-xs text-muted-foreground">+{quotes.length - 2}</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-8"
+                          onClick={() => setLocation(`/protocolo-dermalift?patient=${patient.id}`)}
+                          data-testid={`button-new-protocol-${patient.id}`}
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          Protocolo
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 opacity-60 transition-opacity group-hover:opacity-100"
+                          onClick={() => handleEdit(patient)}
+                          data-testid={`button-edit-patient-${patient.id}`}
+                          title="Editar paciente"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive opacity-60 transition-opacity hover:text-destructive group-hover:opacity-100"
+                          onClick={() => handleDelete(patient)}
+                          data-testid={`button-delete-patient-${patient.id}`}
+                          title="Excluir paciente"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))
-        )}
-      </div>
+          </CardContent>
+        </Card>
+      )}
 
       <AlertDialog open={!!deletingPatient} onOpenChange={(open) => !open && setDeletingPatient(null)}>
         <AlertDialogContent>

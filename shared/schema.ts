@@ -140,6 +140,12 @@ export const quotes = pgTable("quotes", {
   status: text("status").notNull().default("pending"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   notes: text("notes"),
+  /**
+   * Áreas do mapa facial marcadas por pilar, para a proposta do paciente.
+   * Formato: { sustentacao: ["10", "10E"], estruturacao: [...], ... }
+   * Independente dos procedimentos selecionados — é só ilustrativo.
+   */
+  faceZones: jsonb("face_zones").$type<Record<string, string[]>>(),
 });
 
 export const quoteItems = pgTable("quote_items", {
@@ -163,6 +169,7 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
   downPayment: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0)).optional(),
   bonusList: z.array(z.string()).optional(),
   status: z.enum(["pending", "accepted", "rejected"]).optional(),
+  faceZones: z.record(z.string(), z.array(z.string())).optional().nullable(),
 });
 
 export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({

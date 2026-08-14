@@ -19,7 +19,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { ClinicSettings } from "@shared/schema";
@@ -78,17 +82,18 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="p-4 group-data-[collapsible=icon]:p-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary">
-            <Building2 className="h-6 w-6 text-primary-foreground" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
+            <Building2 className="h-6 w-6 text-primary-foreground group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
           </div>
-          <div>
-            <h2 className="font-serif text-lg font-bold text-foreground">Dermalift</h2>
-            <p className="text-xs text-muted-foreground">
-              {clinicSettings?.clinicName || "Gestão de Clínicas"}
-            </p>
+          {/* Some quando a barra está recolhida — sobra só o ícone */}
+          <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+            <h2 className="truncate font-serif text-lg font-bold text-foreground">
+              {clinicSettings?.clinicName || "Dermaplástica"}
+            </h2>
+            <p className="truncate text-xs text-muted-foreground">Dra. Flávia Colares</p>
           </div>
         </div>
       </SidebarHeader>
@@ -137,6 +142,16 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border p-2">
+        <div className="flex items-center justify-between gap-1 group-data-[collapsible=icon]:flex-col">
+          <SidebarTrigger data-testid="button-sidebar-toggle" />
+          <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
+            <UserMenu />
+            <ThemeToggle />
+          </div>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

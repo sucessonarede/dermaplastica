@@ -32,6 +32,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import FaceMap from "@/components/FaceMap";
 import { useToast } from "@/hooks/use-toast";
 import { type Procedure, type DermaliftProtocol, type Patient } from "@shared/schema";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
@@ -58,6 +59,9 @@ export default function QuoteBuilder() {
   const [downPayment, setDownPayment] = useState<number>(0);
   const [bonusList, setBonusList] = useState<string[]>([]);
   const [newBonus, setNewBonus] = useState("");
+  // Áreas do mapa facial marcadas por pilar. Independente dos procedimentos:
+  // serve só para o paciente ver, na proposta, onde será tratado.
+  const [faceZones, setFaceZones] = useState<Record<string, string[]>>({});
   const prevLoadQuoteIdRef = useRef<string | null | undefined>(undefined);
   const isHydratedRef = useRef<boolean>(false);
   const { toast } = useToast();
@@ -95,6 +99,7 @@ export default function QuoteBuilder() {
     setDownPayment(0);
     setBonusList([]);
     setNewBonus("");
+    setFaceZones({});
     setEditingPrice(null);
     setEditingNote(null);
     isHydratedRef.current = false;
@@ -155,6 +160,10 @@ export default function QuoteBuilder() {
         setBonusList(loadedQuote.bonusList);
       }
 
+      if (loadedQuote.faceZones && typeof loadedQuote.faceZones === "object") {
+        setFaceZones(loadedQuote.faceZones as Record<string, string[]>);
+      }
+
       // Mark as hydrated
       isHydratedRef.current = true;
     }
@@ -164,7 +173,7 @@ export default function QuoteBuilder() {
     sustentacao: {
       title: "Sustentação",
       icon: Activity,
-      color: "hsl(var(--primary))",
+      color: "hsl(var(--ring))",
       bgColor: "bg-[hsl(var(--primary))]/10",
       borderColor: "ring-[hsl(var(--primary))]/30",
       textColor: "text-[hsl(var(--primary))]",
@@ -423,6 +432,7 @@ export default function QuoteBuilder() {
         bonusList,
         status: loadedQuote?.status || "pending",
         notes: null,
+        faceZones,
         items,
       };
 
@@ -522,7 +532,7 @@ export default function QuoteBuilder() {
       {/* Título da página */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">
+          <h1 className="font-serif text-[28px] font-bold tracking-tight text-foreground">
             Protocolo Dermalift
           </h1>
           <p className="text-muted-foreground">Monte o tratamento ideal para seu paciente</p>
@@ -699,22 +709,35 @@ export default function QuoteBuilder() {
                   className={`ring-1 ${config.borderColor} hover-elevate flex-shrink-0 w-[380px]`}
                   data-testid={`card-protocol-${protocol}`}
                 >
-                  <CardHeader className={`${config.bgColor} rounded-t-xl`}>
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-md ${config.bgColor} ring-1 ${config.borderColor}`}>
-                        <Icon className={`h-5 w-5 ${config.textColor}`} />
+                  <CardHeader className={`${config.bgColor} rounded-t-2xl px-5 py-4`}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background/70">
+                        <Icon className={`h-[18px] w-[18px] ${config.textColor}`} />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className={`text-lg ${config.textColor}`}>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className={`text-base font-semibold ${config.textColor}`}>
                           {config.title}
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           {config.description}
                         </p>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-4">
+                  <CardContent className="px-5 pb-5 pt-4">
+                    {/* Mapa facial: o profissional marca as áreas que serão
+                        tratadas neste pilar. Puramente ilustrativo — não altera
+                        procedimentos nem valores. */}
+                    <FaceMap
+                      value={faceZones[protocol] ?? []}
+                      onChange={(ids) =>
+                        setFaceZones((prev) => ({ ...prev, [protocol]: ids }))
+                      }
+                      accent={config.color}
+                      maxChips={6}
+                      className="mb-4 w-full"
+                    />
+
                     <div className="space-y-2">
                       {protocolProcedures.map((procedure) => {
                         const isSelected = selectedItems.has(procedure.id);
@@ -828,9 +851,9 @@ export default function QuoteBuilder() {
             })}
 
             {/* Painel de Resumo */}
-            <Card className="ring-1 ring-[hsl(var(--chart-3))]/20 flex-shrink-0 w-[380px]">
-            <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-3))]/5 to-transparent">
-              <CardTitle className="text-[hsl(var(--primary))]">Resumo do Protocolo</CardTitle>
+            <Card className="border-border/60 flex-shrink-0 w-[380px]">
+          <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold tracking-tight">Resumo do Protocolo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {selectedProceduresList.length === 0 ? (

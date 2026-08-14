@@ -186,7 +186,7 @@ export default function SavedQuotes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-[hsl(var(--primary))]">Orçamentos Salvos</h1>
+          <h1 className="font-serif text-[28px] font-bold tracking-tight text-foreground">Orçamentos Salvos</h1>
           <p className="text-muted-foreground">Gerencie e visualize seus orçamentos</p>
         </div>
         {filteredQuotes.length > 0 && (

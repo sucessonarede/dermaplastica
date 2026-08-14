@@ -10,7 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { LogIn, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -18,6 +18,14 @@ const loginSchema = z.object({
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
+
+/** Campo com fundo suave, cantos arredondados e ícone à esquerda. */
+const fieldClasses =
+  "h-12 rounded-2xl pl-11 text-base transition-colors " +
+  // claro: leve tingimento roxo | escuro: superfície mais clara que o card, com borda visível
+  "border-transparent bg-primary/[0.06] dark:border-border/60 dark:bg-muted/70 " +
+  "placeholder:text-muted-foreground/60 " +
+  "focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -59,94 +67,96 @@ export default function Login() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <LogIn className="w-5 h-5 text-primary" />
-            </div>
-            <CardTitle className="text-2xl font-bold">Dermalift</CardTitle>
+    <Card className="w-full max-w-sm rounded-[32px] border-border/50 shadow-xl shadow-primary/5">
+      <CardHeader className="space-y-3 px-8 pt-9 pb-2 text-center">
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
+            <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <CardDescription>
-            Entre com suas credenciais para acessar o sistema
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
+          <CardTitle className="text-2xl font-bold tracking-tight">Dermalift</CardTitle>
+        </div>
+        <CardDescription className="text-balance text-sm">
+          Entre com suas credenciais para acessar o sistema
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="px-8 pb-9 pt-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-medium">E-mail</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-primary/50 dark:text-[hsl(var(--ring)/0.65)]" />
+                      <Input
                         type="email"
                         placeholder="seu@email.com"
                         data-testid="input-email"
+                        className={fieldClasses}
                         {...field}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input 
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          data-testid="input-password"
-                          className="pr-10"
-                          {...field}
-                        />
-                        <button
-                          type="button"
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword((v) => !v)}
-                          data-testid="button-toggle-password"
-                          tabIndex={-1}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-medium">Senha</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-primary/50 dark:text-[hsl(var(--ring)/0.65)]" />
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        data-testid="input-password"
+                        className={`${fieldClasses} pr-12`}
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 flex items-center pr-4 text-muted-foreground/70 transition-colors hover:text-primary"
+                        onClick={() => setShowPassword((v) => !v)}
+                        data-testid="button-toggle-password"
+                        tabIndex={-1}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loginMutation.isPending}
-                data-testid="button-login"
-              >
-                {loginMutation.isPending ? "Entrando..." : "Entrar"}
-              </Button>
-
-              <div className="text-center text-sm">
-                <span className="text-muted-foreground">Não tem uma conta? </span>
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline p-0 h-auto font-medium"
-                  onClick={() => setLocation("/register")}
-                  data-testid="link-register"
-                >
-                  Cadastre-se
-                </button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            <Button
+              type="submit"
+              className="group h-12 w-full rounded-2xl text-base font-semibold shadow-lg shadow-primary/20 transition-shadow hover:shadow-primary/30"
+              disabled={loginMutation.isPending}
+              data-testid="button-login"
+            >
+              {loginMutation.isPending ? (
+                "Entrando..."
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  Entrar
+                  <ArrowRight className="h-[18px] w-[18px] transition-transform group-hover:translate-x-0.5" />
+                </span>
+              )}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

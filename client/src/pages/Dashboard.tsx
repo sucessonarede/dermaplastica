@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Users, Calculator, DollarSign } from "lucide-react";
+import { TrendingUp, Users, Calculator, DollarSign, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { RevenueChart } from "@/components/RevenueChart";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import type { QuoteWithDetails } from "../../../server/storage";
@@ -14,6 +15,14 @@ interface DashboardStats {
   conversionRate: number;
   acceptedQuotes: number;
 }
+
+/** Cor de cada indicador, na ordem em que aparecem. */
+const STAT_COLORS = [
+  "hsl(var(--ring))", // = primary no claro, roxo claro no escuro
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+];
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -102,26 +111,62 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl bg-gradient-to-r from-[hsl(275,100%,26%)] via-[hsl(340,74%,62%)] to-[hsl(17,100%,61%)] p-8 text-primary-foreground hover-elevate">
-        <h1 className="font-serif text-3xl font-bold">
-          {getGreeting()}, {user?.name || "Usuário"}!
-        </h1>
-        <p className="text-primary-foreground/90">Visão geral da sua clínica</p>
+      {/* Saudação: o gradiente da marca vira um fio na borda esquerda, em vez
+          de um bloco cheio que compete com os números. */}
+      <div className="relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-r from-card via-card/85 to-transparent px-7 py-6 lg:flex-row lg:items-center lg:justify-between">
+        <div
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-[hsl(275,100%,26%)] via-[hsl(340,74%,62%)] to-[hsl(17,100%,61%)]"
+        />
+
+        <div>
+          <h1 className="font-serif text-2xl font-bold tracking-tight">
+            {getGreeting()}, {user?.name || "Usuário"}!{" "}
+            <span role="img" aria-label="aceno">
+              👋
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Visão geral da sua clínica</p>
+        </div>
+
+        {/* Ações rápidas: no lado oposto da saudação, em botões compactos */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/protocolo-dermalift">
+            <Button size="sm" data-testid="button-new-quote">
+              <Calculator className="mr-1.5 h-4 w-4" />
+              Novo Orçamento
+            </Button>
+          </Link>
+          <Link href="/patients">
+            <Button size="sm" variant="outline" data-testid="button-new-patient">
+              <Users className="mr-1.5 h-4 w-4" />
+              Cadastrar Paciente
+            </Button>
+          </Link>
+          <Link href="/procedures">
+            <Button size="sm" variant="outline" data-testid="button-manage-procedures">
+              <Package className="mr-1.5 h-4 w-4" />
+              Procedimentos
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
-          <Card key={stat.title} className="hover-elevate ring-1 ring-[hsl(var(--chart-2))]/20">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+          <Card key={stat.title} className="hover-elevate border-border/60">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={`h-4 w-4 ${
-                index === 0 ? "text-[hsl(var(--primary))]" : 
-                index === 1 ? "text-[hsl(var(--chart-2))]" : 
-                index === 2 ? "text-[hsl(var(--chart-3))]" : 
-                "text-[hsl(var(--chart-4))]"
-              }`} />
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${STAT_COLORS[index]} 12%, transparent)`,
+                }}
+              >
+                <stat.icon className="h-[18px] w-[18px]" style={{ color: STAT_COLORS[index] }} />
+              </div>
             </CardHeader>
             <CardContent>
               {statsLoading ? (
@@ -131,9 +176,9 @@ export default function Dashboard() {
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                  <p className="text-xs text-chart-4 flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
+                  <div className="text-[28px] font-bold leading-none tracking-tight text-foreground">{stat.value}</div>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <TrendingUp className="h-3 w-3 text-chart-4" />
                     {stat.change}
                   </p>
                 </>
@@ -144,9 +189,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="ring-1 ring-[hsl(var(--chart-2))]/20">
-          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-2))]/5 to-transparent">
-            <CardTitle className="text-[hsl(var(--primary))]">Orçamentos Recentes</CardTitle>
+        <Card className="border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold tracking-tight">Orçamentos Recentes</CardTitle>
           </CardHeader>
           <CardContent>
             {quotesLoading ? (
@@ -202,35 +247,22 @@ export default function Dashboard() {
               </div>
             )}
             <Link href="/apresentacao">
-              <Button variant="outline" className="w-full mt-4" data-testid="button-view-all-quotes">
-                Orçamentos
+              <Button variant="ghost" className="mt-4 w-full text-muted-foreground hover:text-foreground" data-testid="button-view-all-quotes">
+                Ver todos os orçamentos
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="ring-1 ring-[hsl(var(--chart-3))]/20">
-          <CardHeader className="bg-gradient-to-r from-transparent via-[hsl(var(--chart-3))]/5 to-transparent">
-            <CardTitle className="text-[hsl(var(--primary))]">Ações Rápidas</CardTitle>
+        <Card className="border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold tracking-tight">Faturamento</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Total em orçamentos nos últimos 6 meses
+            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Link href="/protocolo-dermalift" className="block">
-              <Button className="w-full" data-testid="button-new-quote">
-                <Calculator className="h-4 w-4 mr-2" />
-                Novo Orçamento
-              </Button>
-            </Link>
-            <Link href="/patients" className="block">
-              <Button variant="outline" className="w-full" data-testid="button-new-patient">
-                <Users className="h-4 w-4 mr-2" />
-                Cadastrar Paciente
-              </Button>
-            </Link>
-            <Link href="/procedures" className="block">
-              <Button variant="outline" className="w-full" data-testid="button-manage-procedures">
-                Gerenciar Procedimentos
-              </Button>
-            </Link>
+          <CardContent>
+            <RevenueChart />
           </CardContent>
         </Card>
       </div>

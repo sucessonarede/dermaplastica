@@ -145,7 +145,7 @@ export default function ClinicSettings() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">Configurações da Clínica</h1>
+          <h1 className="font-serif text-[28px] font-bold tracking-tight text-foreground">Configurações da Clínica</h1>
           <p className="text-muted-foreground">Gerencie informações e configurações da sua clínica</p>
         </div>
         <div className="flex gap-3">

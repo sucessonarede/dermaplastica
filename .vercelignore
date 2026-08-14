@@ -1,0 +1,5 @@
+.local-storage
+.tmp_transfer
+*.png
+!client/**/*.png
+dist
