@@ -2,9 +2,9 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
-import { registerRoutes } from "./routes";
-import { log } from "./logger";
-import { pool } from "./db";
+import { registerRoutes } from "./routes.js";
+import { log } from "./logger.js";
+import { pool } from "./db.js";
 
 /**
  * Monta a aplicação Express (middlewares + rotas de API).

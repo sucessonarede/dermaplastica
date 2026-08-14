@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { createServer } from "http";
-import { getApp } from "./app";
-import { setupVite, serveStatic } from "./vite";
-import { log } from "./logger";
+import { getApp } from "./app.js";
+import { setupVite, serveStatic } from "./vite.js";
+import { log } from "./logger.js";
 
 /**
  * Entrypoint para rodar o projeto localmente (npm run dev)

@@ -1,10 +1,10 @@
 import type { Express, Request, Response } from "express";
-import { storage } from "./storage";
-import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema, insertSkincareProductSchema } from "../shared/schema";
+import { storage } from "./storage.js";
+import { insertQuoteSchema, insertQuoteItemSchema, insertUserSchema, loginUserSchema, insertPatientSchema, insertProcedureSchema, insertClinicSettingsSchema, insertPatientPhotoSchema, insertSkincareProductSchema } from "../shared/schema.js";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-import { objectStorageService } from "./objectStorage";
+import { objectStorageService } from "./objectStorage.js";
 
 // Schema for creating a quote with items
 const createQuoteBodySchema = z.object({

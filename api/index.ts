@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { getApp } from "../server/app";
+import { getApp } from "../server/app.js";
 
 /**
  * Função serverless da Vercel.

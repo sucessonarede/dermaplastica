@@ -15,10 +15,10 @@ import {
   type SkincareProduct,
   type InsertSkincareProduct,
   type SkincareTimeOfDay,
-} from "../shared/schema";
+} from "../shared/schema.js";
 import { randomUUID } from "crypto";
-import { db } from "./db";
-import { users, quotes, quoteItems, patients, patientPhotos, procedures, clinicSettings, skincareProducts } from "../shared/schema";
+import { db } from "./db.js";
+import { users, quotes, quoteItems, patients, patientPhotos, procedures, clinicSettings, skincareProducts } from "../shared/schema.js";
 import { eq, and, gte, sql, desc, count, inArray } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
