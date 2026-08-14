@@ -1,0 +1,400 @@
+===============================================================================
+ DERMAPLASTICA - RESUMO DO PROJETO
+ Sistema de gestao da clinica  |  Dra. Flavia Colares
+ Atualizado em 14/08/2026
+===============================================================================
+
+ SUMARIO
+   1. O que e / onde esta
+   2. Rodar na sua maquina
+   3. Publicar na Vercel
+   4. Variaveis de ambiente
+   5. Banco de dados (LEIA ANTES DE MEXER)
+   6. O que mudou na migracao do Replit
+   7. Funcionalidades novas
+   8. Mudancas de interface
+   9. Comandos uteis
+  10. Problemas comuns
+  11. Pendencias e ideias
+
+
+===============================================================================
+ 1. O QUE E / ONDE ESTA
+===============================================================================
+
+  Pasta do projeto (no seu Mac):
+    /Users/marciaoliveiraalves/Documents/CLAUDE/Projects/Dermalift
+
+  Repositorio:
+    https://github.com/sucessonarede/dermaplastica.git
+
+  Banco de dados e arquivos:
+    Supabase - projeto zjqxytnwjyvdafnrujph (regiao aws-1-sa-east-1)
+
+  Tecnologia:
+    React + Vite (frontend), Express + TypeScript (backend),
+    Drizzle ORM, PostgreSQL no Supabase, hospedagem na Vercel.
+
+  Documentacao dentro da pasta:
+    README.md           - como rodar localmente
+    DEPLOY-VERCEL.md    - passo a passo do deploy
+    ARQUITETURA.md      - modulos, schema do banco, Protocolo Dermalift
+
+
+===============================================================================
+ 2. RODAR NA SUA MAQUINA
+===============================================================================
+
+  Abra o Terminal e cole:
+
+    cd /Users/marciaoliveiraalves/Documents/CLAUDE/Projects/Dermalift
+    npm run dev
+
+  Depois abra:  http://localhost:5000
+
+  Para parar o servidor:  Ctrl + C  na janela do Terminal
+  Deixe a janela ABERTA enquanto estiver usando.
+
+  ---------------------------------------------------------------------------
+  Se for a primeira vez num computador novo:
+
+    npm install       (instala as dependencias)
+    npm run setup     (pergunta a senha do banco e monta o arquivo .env)
+    npm run dev
+
+  O "npm run setup" pede duas coisas e mostra asteriscos no lugar do texto:
+    1) a senha do banco (Supabase > Settings > Database)
+    2) a service_role key (Supabase > Settings > API) - pode pular com Enter,
+       mas sem ela o upload de fotos nao funciona
+
+  Ele testa a conexao no fim e lista as tabelas com a contagem de registros.
+
+
+===============================================================================
+ 3. PUBLICAR NA VERCEL
+===============================================================================
+
+  PASSO 1 - Enviar o codigo para o GitHub
+
+    cd /Users/marciaoliveiraalves/Documents/CLAUDE/Projects/Dermalift
+    git push -u origin main
+
+    Se o push for recusado porque o repositorio ja tem um README:
+      git pull --rebase origin main
+      git push -u origin main
+
+  PASSO 2 - Criar o bucket de arquivos no Supabase
+
+    Supabase > Storage > New bucket
+      Nome: dermalift
+      Public bucket: DESMARCADO
+    Sem esse bucket, o upload de fotos de pacientes falha.
+
+  PASSO 3 - Importar na Vercel
+
+    Acesse vercel.com/new
+    Import Git Repository > sucessonarede/dermaplastica
+    Framework Preset: Other
+    NAO altere Build Command nem Output Directory (vem do vercel.json)
+
+    Antes de clicar em Deploy, cadastre as variaveis da secao 4.
+    Marque as tres environments (Production, Preview, Development).
+
+  PASSO 4 - Conferir
+
+    Abra  https://SUA-URL.vercel.app/api/health
+    Deve retornar: {"ok":true,"env":"production"}
+
+    Depois: faca login, abra um paciente, gere um orcamento.
+
+
+===============================================================================
+ 4. VARIAVEIS DE AMBIENTE
+===============================================================================
+
+  Os valores reais estao no arquivo .env dentro da pasta do projeto.
+  Esse arquivo NAO vai para o GitHub (esta no .gitignore) - e proposital.
+
+  Para ver o .env: no Finder ele fica oculto. Use Cmd + Shift + . para
+  mostrar arquivos ocultos, ou abra pelo Terminal com:  open -e .env
+
+  ---------------------------------------------------------------------------
+  CADASTRAR NA VERCEL:
+
+    DATABASE_URL                 conexao do POOLER, porta 6543
+    SESSION_SECRET               copie do seu .env
+    SUPABASE_URL                 https://zjqxytnwjyvdafnrujph.supabase.co
+    SUPABASE_SERVICE_ROLE_KEY    copie do seu .env
+    SUPABASE_STORAGE_BUCKET      dermalift
+    PRIVATE_OBJECT_DIR           private
+
+  NAO cadastrar na Vercel:
+
+    DIRECT_URL                   so serve para migracoes rodadas por voce
+
+  ---------------------------------------------------------------------------
+  ATENCAO A PORTA DA CONEXAO:
+
+    6543  = transaction pooler -> use na aplicacao (local e Vercel)
+    5432  = session pooler     -> use so para migracoes (DIRECT_URL)
+
+  Se usar a porta errada na Vercel, o Supabase derruba o banco por excesso
+  de conexoes. Cada acesso ao site abre uma conexao nova.
+
+  ---------------------------------------------------------------------------
+  A service_role key e SECRETA. Ela so existe no backend, nunca e enviada
+  para o navegador. Nao publique em lugar nenhum.
+
+
+===============================================================================
+ 5. BANCO DE DADOS - LEIA ANTES DE MEXER
+===============================================================================
+
+  O banco JA EXISTE e esta POPULADO com os dados reais da clinica.
+  E o mesmo banco que era usado no Replit.
+
+  >>> NAO RODE "npm run db:push" POR HABITO <<<
+
+  Esse comando compara o arquivo de schema com o banco e aplica as
+  diferencas. Se houver qualquer divergencia, ele pode ALTERAR ou REMOVER
+  colunas que tem dados dentro.
+
+  Se um dia precisar mudar o schema, rode primeiro SEM confirmar:
+
+    npx drizzle-kit push
+
+  Leia o plano que ele mostra. So confirme se fizer sentido.
+
+  ---------------------------------------------------------------------------
+  RODAR LOCAL MEXE NOS DADOS REAIS
+
+  Quando voce roda "npm run dev" na sua maquina, o sistema conecta no banco
+  de producao. Paciente que voce cadastrar para testar vai aparecer para a
+  clinica.
+
+  Se for testar bastante, crie um projeto separado no Supabase e aponte o
+  .env local para ele.
+
+  ---------------------------------------------------------------------------
+  MIGRACAO JA APLICADA
+
+  Em 14/08/2026 foi adicionada a coluna face_zones na tabela quotes, para
+  guardar as areas do mapa facial. O SQL esta em:
+
+    migrations/001_add_face_zones.sql
+
+  Foi aplicado com sucesso. Nao precisa rodar de novo.
+
+
+===============================================================================
+ 6. O QUE MUDOU NA MIGRACAO DO REPLIT
+===============================================================================
+
+  ANTES (Replit)                     AGORA (Vercel)
+  ---------------------------------- ----------------------------------------
+  Replit Object Storage              Supabase Storage
+                                     (disco local como apoio em dev)
+
+  Servidor unico com listen()        server/app.ts (app puro)
+                                     + server/index.ts (rodar local)
+                                     + api/index.ts (funcao da Vercel)
+
+  bcrypt (modulo nativo)             bcryptjs (JavaScript puro)
+                                     senhas antigas continuam valendo
+
+  Plugins @replit/vite-*             removidos
+
+  package-lock apontando para o      registry oficial do npm
+  registry interno do Replit         (era isso que impedia o npm install)
+
+  Sessao em memoria em dev           igual, mas forca PostgreSQL sempre
+  e PostgreSQL em producao           que rodar em ambiente serverless
+
+  Pool do Postgres sem limite        pool reaproveitado e limitado
+
+  SSL do Postgres sempre ligado      automatico: desliga em localhost,
+                                     liga no Supabase
+
+  ---------------------------------------------------------------------------
+  LIMPEZA (78 MB removidos do projeto)
+
+  Foram para a pasta _to_delete: .replit, .config, .local, .agents,
+  attached_assets, prints soltos na raiz e o build antigo.
+
+  >>> VOCE PODE APAGAR A PASTA _to_delete <<<
+  Confira o conteudo e mande para o lixo. Ela ja esta no .gitignore, entao
+  nao vai para o GitHub de qualquer forma.
+
+  O antigo replit.md virou ARQUITETURA.md, com o conteudo tecnico mantido
+  e as informacoes desatualizadas corrigidas.
+
+
+===============================================================================
+ 7. FUNCIONALIDADES NOVAS
+===============================================================================
+
+  MAPA FACIAL NO PROTOCOLO DERMALIFT
+  ---------------------------------------------------------------------------
+  Cada coluna de pilar tem um rosto clicavel acima da lista de procedimentos.
+  Voce marca as areas que serao tratadas naquele pilar.
+
+  Como funciona:
+    - Clicar num lado marca os DOIS lados (malar, olheira, mandibula...)
+    - Para marcar so um lado: Alt + clique
+    - "Marcar todas" e "Limpar" no canto direito da legenda
+    - Tudo marcado vira um unico rotulo: "Todas as areas"
+    - Acima de 6 areas, a legenda resume com "+N"
+
+  A marcacao e INDEPENDENTE dos procedimentos: marcar area nao seleciona
+  procedimento nem mexe em valor. E ilustrativo, para o paciente entender
+  onde sera tratado.
+
+  Fica salvo junto com o orcamento e aparece na apresentacao, num slide
+  chamado "Areas do seu tratamento", antes do slide do plano. So aparecem
+  os pilares que voce marcou.
+
+  Observacao: algumas areas se sobrepoem no desenho (a olheira encosta no
+  malar). No ponto de sobreposicao, o clique pega a area que esta por cima.
+  Clicando numa parte livre, pega a certa.
+
+  GRAFICO DE FATURAMENTO NO DASHBOARD
+  ---------------------------------------------------------------------------
+  Barras dos ultimos 6 meses, somando o valor dos orcamentos por mes.
+  Passando o mouse aparece o valor cheio e a quantidade de orcamentos.
+  Meses sem orcamento aparecem vazios de proposito.
+
+
+===============================================================================
+ 8. MUDANCAS DE INTERFACE
+===============================================================================
+
+  Base do sistema
+    - Cantos mais suaves em cards, campos, botoes e caixas de dialogo
+    - Campos mais altos, com borda discreta e anel roxo ao focar
+    - Titulos de pagina neutros: o roxo ficou reservado para as acoes
+
+  Login
+    - Card mais estreito, cantos arredondados, campos com icone
+
+  Dashboard
+    - Banner com o gradiente reduzido a um fio na borda esquerda
+    - Indicadores com icone em pastilha e numero maior
+    - Acoes rapidas viraram botoes pequenos na faixa da saudacao
+    - Grafico de faturamento no lugar do painel de acoes
+
+  Fundo
+    - Gradiente suave (rosa, azul, menta) em todas as telas
+    - Versao propria para o tema escuro, em tons profundos
+    - Reproduzido em CSS, sem imagem: nao pesa e se adapta a qualquer tela
+
+  Barra lateral
+    - Fundo branco
+    - Logo, nome da clinica e "Dra. Flavia Colares"
+    - Ao recolher, sobra so o icone
+    - Botao de recolher, menu do usuario e tema foram para o rodape dela
+    - A barra do topo foi removida
+
+  Pacientes
+    - Lista no mesmo padrao da tela de orcamentos: um card com linhas
+    - Busca e filtros na mesma linha
+    - Ate 2 orcamentos por linha, com "+N" quando houver mais
+
+  Relatorios
+    - Ranking em linhas compactas, com a posicao num selo a esquerda
+
+  Protocolo Dermalift
+    - Mapa facial ocupando a largura da coluna
+    - Cabecalho mais enxuto
+
+
+===============================================================================
+ 9. COMANDOS UTEIS
+===============================================================================
+
+  Sempre comecar entrando na pasta:
+
+    cd /Users/marciaoliveiraalves/Documents/CLAUDE/Projects/Dermalift
+
+  ---------------------------------------------------------------------------
+  npm run dev        Roda o sistema em http://localhost:5000
+  npm run setup      Configura o arquivo .env e testa a conexao
+  npm install        Instala as dependencias
+  npm run build      Gera a versao de producao
+  npm run check      Confere erros de codigo
+  npm run db:push    NAO USE sem necessidade (veja secao 5)
+
+  git status         Mostra o que mudou
+  git add -A         Prepara tudo para o commit
+  git commit -m "descricao do que mudou"
+  git push           Envia para o GitHub
+
+  open -e .env       Abre o arquivo de configuracao
+  Cmd + Shift + .    No Finder, mostra arquivos ocultos
+
+
+===============================================================================
+ 10. PROBLEMAS COMUNS
+===============================================================================
+
+  "Erro 500 em tudo" depois do deploy
+    Falta variavel de ambiente na Vercel.
+    Veja: Deployments > clique no deploy > Functions > Logs
+
+  "too many connections" ou o banco travando
+    Voce usou a conexao direta (5432) na Vercel.
+    Troque pela do transaction pooler (6543).
+
+  Login desloga sozinho
+    SESSION_SECRET faltando ou diferente entre as environments.
+    Use o mesmo valor nas tres.
+
+  Upload de foto retorna erro
+    Falta a SUPABASE_SERVICE_ROLE_KEY, ou o bucket "dermalift"
+    nao existe no Supabase Storage.
+
+  Pagina em branco ao recarregar uma rota interna
+    O arquivo vercel.json nao foi commitado.
+
+  Git reclamando de "index.lock"
+    Apague o arquivo .git/index.lock e repita o comando.
+
+  Senha do banco nao funciona
+    Se voce copiou do painel do Supabase e ela tem asteriscos, e a versao
+    mascarada. A senha real esta nos Secrets do Replit (se o projeto ainda
+    existir) ou pode ser resetada em Supabase > Settings > Database.
+    Resetar nao apaga dados.
+
+  Acento sumindo no nome da clinica
+    O nome vem do cadastro em Configuracoes. Corrija por la.
+
+  O rosto do mapa facial nao aparece
+    Reinicie o servidor. A pasta client/public e lida so na inicializacao.
+
+
+===============================================================================
+ 11. PENDENCIAS E IDEIAS
+===============================================================================
+
+  PENDENTE
+    [ ] Fazer o git push para o GitHub
+    [ ] Criar o bucket "dermalift" no Supabase Storage
+    [ ] Importar o projeto na Vercel e cadastrar as variaveis
+    [ ] Corrigir o nome da clinica em Configuracoes (com acento)
+    [ ] Apagar a pasta _to_delete
+    [ ] Conferir se as fotos antigas de pacientes ainda aparecem
+        (elas ficaram no storage do Replit; podem precisar ser migradas)
+
+  A CONSIDERAR
+    - A rota /register continua aberta: quem digitar o endereco consegue
+      criar conta. Se quiser fechar o cadastro, precisa bloquear tambem no
+      backend, nao so esconder o link.
+    - Campo para o nome da profissional no cadastro da clinica (hoje
+      "Dra. Flavia Colares" esta fixo no codigo).
+    - O grafico soma os orcamentos no navegador. Funciona bem no volume
+      atual; se passar de alguns milhares, vale mover para o servidor.
+    - Refinar as telas de Receituario e Apresentacao, que ficaram de fora.
+
+
+===============================================================================
+ FIM
+===============================================================================
