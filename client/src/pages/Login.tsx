@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,7 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Building2, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -69,11 +69,10 @@ export default function Login() {
   return (
     <Card className="w-full max-w-sm rounded-[32px] border-border/50 shadow-xl shadow-primary/5">
       <CardHeader className="space-y-3 px-8 pt-9 pb-2 text-center">
-        <div className="flex items-center justify-center gap-2.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-            <Sparkles className="h-5 w-5 text-primary" />
+        <div className="flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
+            <Building2 className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Dermalift</CardTitle>
         </div>
         <CardDescription className="text-balance text-sm">
           Entre com suas credenciais para acessar o sistema
