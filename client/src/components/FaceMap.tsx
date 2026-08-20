@@ -202,10 +202,12 @@ export default function FaceMap({
                 onPointerEnter={() => setHover(z.id)}
                 onPointerLeave={() => setHover(null)}
                 fill={accent}
-                fillOpacity={on ? 0.42 : hot ? 0.16 : 0.001}
+                fillOpacity={on ? 0.5 : hot ? 0.16 : 0.001}
                 stroke={accent}
-                strokeOpacity={on ? 1 : locked ? 0 : hot ? 0.8 : 0.22}
-                strokeWidth={on ? 2 : 1.2}
+                // Marcada: só o preenchimento, sem contorno. O tracejado fica
+                // para as áreas ainda disponíveis.
+                strokeOpacity={on ? 0 : locked ? 0 : hot ? 0.8 : 0.22}
+                strokeWidth={on ? 0 : 1.2}
                 strokeDasharray={on ? undefined : "4 4"}
                 vectorEffect="non-scaling-stroke"
                 className={

@@ -507,6 +507,7 @@ export default function QuoteBuilder() {
       installments: installments > 1 ? installments : undefined,
       downPayment: validDownPayment > 0 ? validDownPayment.toString() : undefined,
       bonusList: bonusList.length > 0 ? bonusList : undefined,
+      faceZones,
     };
 
     generateQuotePDF(quoteData);
