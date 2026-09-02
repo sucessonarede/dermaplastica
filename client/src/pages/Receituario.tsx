@@ -23,11 +23,20 @@ import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +53,9 @@ import {
   Trash2,
   Loader2,
   GripVertical,
-  Layers,
+  Pencil,
+  X,
+  MoreVertical,
 } from "lucide-react";
 import type { SkincareProduct, SkincareTimeOfDay, ClinicSettings } from "@shared/schema";
 import { skincareTimesOfDay } from "@shared/schema";
@@ -125,6 +136,19 @@ interface InlineAddForm {
   selectedBlocks: Set<SkincareTimeOfDay>;
 }
 
+/** Formulário de edição de um produto já cadastrado. */
+interface EditProductForm {
+  name: string;
+  usageInstructions: string;
+  selectedBlocks: Set<SkincareTimeOfDay>;
+  /** Nova imagem escolhida (ainda não enviada). */
+  imageFile: File | null;
+  /** Preview da nova imagem. */
+  imagePreview: string | null;
+  /** Marca a imagem atual para remoção ao salvar. */
+  removeImage: boolean;
+}
+
 interface SortableProductItemProps {
   product: SkincareProduct;
   currentBlock: SkincareTimeOfDay;
@@ -134,6 +158,7 @@ interface SortableProductItemProps {
   ringClass: string;
   onToggle: (id: string, block: SkincareTimeOfDay) => void;
   onDelete: (id: string) => void;
+  onEdit: (product: SkincareProduct) => void;
   onUpdateBlocks: (id: string, blocks: SkincareTimeOfDay[]) => void;
 }
 
@@ -146,6 +171,7 @@ function SortableProductItem({
   ringClass,
   onToggle,
   onDelete,
+  onEdit,
   onUpdateBlocks,
 }: SortableProductItemProps) {
   const {
@@ -163,6 +189,18 @@ function SortableProductItem({
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 10 : undefined,
   };
+
+  // Se o arquivo não existir mais no storage, mostramos o espaço vazio em vez
+  // de esconder a miniatura — assim dá para ver quais produtos estão sem foto.
+  const [imagemCarregou, setImagemCarregou] = useState(true);
+  useEffect(() => {
+    setImagemCarregou(true);
+  }, [product.imageUrl]);
+
+  const temImagem = Boolean(product.imageUrl) && imagemCarregou;
+
+  // Mantém o "⋮" visível enquanto o menu está aberto (senão ele some ao mover o mouse).
+  const [menuAberto, setMenuAberto] = useState(false);
 
   const otherBlocks = blocksConfig.filter(
     (b) => b.key !== currentBlock && product.timeOfDay.includes(b.key)
@@ -216,15 +254,27 @@ function SortableProductItem({
           {isSelected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
         </div>
 
-        {product.imageUrl && (
+        {temImagem ? (
           <img
-            src={product.imageUrl}
+            src={product.imageUrl!}
             alt={product.name}
             className="flex-shrink-0 h-10 w-10 rounded object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+            onError={() => setImagemCarregou(false)}
           />
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(product);
+            }}
+            title="Adicionar imagem"
+            aria-label={`Adicionar imagem de ${product.name}`}
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-dashed border-border text-muted-foreground/50 transition-colors hover:border-primary/40 hover:text-primary"
+            data-testid={`button-add-image-${product.id}`}
+          >
+            <ImagePlus className="h-4 w-4" />
+          </button>
         )}
 
         <div className="flex-1 min-w-0">
@@ -252,23 +302,43 @@ function SortableProductItem({
         </div>
       </div>
 
-      {/* Action buttons (appear on hover) */}
-      <div className="invisible group-hover:visible flex items-center gap-0.5 flex-shrink-0">
-        {/* Manage blocks dropdown */}
-        <DropdownMenu>
+      {/* Menu de ações — some até o mouse passar pelo item */}
+      <div
+        className={`flex-shrink-0 transition-opacity ${
+          menuAberto
+            ? "opacity-100"
+            : "opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+        }`}
+      >
+        <DropdownMenu onOpenChange={setMenuAberto}>
           <DropdownMenuTrigger asChild>
             <button
-              className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+              className={`rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground ${
+                menuAberto ? "text-foreground" : ""
+              }`}
               onClick={(e) => e.stopPropagation()}
-              data-testid={`button-manage-blocks-${product.id}`}
-              title="Gerenciar blocos"
+              data-testid={`button-product-menu-${product.id}`}
+              title="Ações"
+              aria-label={`Ações de ${product.name}`}
             >
-              <Layers className="h-3.5 w-3.5" />
+              <MoreVertical className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuLabel className="text-xs">Exibir nos blocos</DropdownMenuLabel>
+
+          <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem
+              onSelect={() => onEdit(product)}
+              data-testid={`menu-edit-product-${product.id}`}
+            >
+              <Pencil className="mr-2 h-3.5 w-3.5" />
+              Editar produto
+            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
+
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              Exibir nos blocos
+            </DropdownMenuLabel>
             {blocksConfig.map((b) => {
               const isChecked = product.timeOfDay.includes(b.key);
               const isOnlyBlock = isChecked && product.timeOfDay.length === 1;
@@ -278,6 +348,7 @@ function SortableProductItem({
                   checked={isChecked}
                   disabled={isOnlyBlock}
                   onCheckedChange={(checked) => toggleBlock(b.key, checked)}
+                  onSelect={(e) => e.preventDefault()}
                   data-testid={`checkbox-block-${b.key}-${product.id}`}
                 >
                   <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${b.dotClass}`} />
@@ -288,20 +359,19 @@ function SortableProductItem({
                 </DropdownMenuCheckboxItem>
               );
             })}
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onSelect={() => onDelete(product.id)}
+              className="text-destructive focus:text-destructive"
+              data-testid={`menu-delete-product-${product.id}`}
+            >
+              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              Excluir
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Delete button */}
-        <button
-          className="rounded p-0.5 text-muted-foreground hover:text-destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(product.id);
-          }}
-          data-testid={`button-delete-product-${product.id}`}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
       </div>
     </div>
   );
@@ -322,6 +392,18 @@ export default function Receituario() {
   });
   const [isPDFLoading, setIsPDFLoading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Edição de um produto já cadastrado
+  const [editingProduct, setEditingProduct] = useState<SkincareProduct | null>(null);
+  const [editForm, setEditForm] = useState<EditProductForm>({
+    name: "",
+    usageInstructions: "",
+    selectedBlocks: new Set(),
+    imageFile: null,
+    imagePreview: null,
+    removeImage: false,
+  });
+  const editImageInputRef = useRef<HTMLInputElement>(null);
 
   // Local ordered lists per block for optimistic drag-and-drop
   const [localOrder, setLocalOrder] = useState<Record<SkincareTimeOfDay, string[]>>({
@@ -433,6 +515,42 @@ export default function Receituario() {
     },
   });
 
+  const removeImageMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      await apiRequest("DELETE", `/api/skincare-products/${productId}/image`);
+    },
+  });
+
+  /** Salva nome, modo de uso, blocos e — se houver — a nova imagem. */
+  const updateProductMutation = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+      imageFile,
+      removeImage,
+    }: {
+      id: string;
+      data: { name: string; usageInstructions: string; timeOfDay: SkincareTimeOfDay[] };
+      imageFile: File | null;
+      removeImage: boolean;
+    }) => {
+      await apiRequest("PATCH", `/api/skincare-products/${id}`, data);
+      if (imageFile) {
+        await uploadImageMutation.mutateAsync({ productId: id, file: imageFile });
+      } else if (removeImage) {
+        await removeImageMutation.mutateAsync(id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/skincare-products"] });
+      handleCloseEdit();
+      toast({ title: "Produto atualizado!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao salvar o produto", variant: "destructive" });
+    },
+  });
+
   const updateBlocksMutation = useMutation({
     mutationFn: async ({ id, timeOfDay }: { id: string; timeOfDay: SkincareTimeOfDay[] }) => {
       await apiRequest("PATCH", `/api/skincare-products/${id}`, { timeOfDay });
@@ -532,6 +650,76 @@ export default function Receituario() {
       imageFile: null,
       imagePreview: null,
       selectedBlocks: new Set(),
+    });
+  };
+
+  const handleStartEdit = (product: SkincareProduct) => {
+    setEditingProduct(product);
+    setEditForm({
+      name: product.name,
+      usageInstructions: product.usageInstructions ?? "",
+      selectedBlocks: new Set(product.timeOfDay as SkincareTimeOfDay[]),
+      imageFile: null,
+      imagePreview: null,
+      removeImage: false,
+    });
+  };
+
+  const handleCloseEdit = () => {
+    setEditingProduct(null);
+    setEditForm({
+      name: "",
+      usageInstructions: "",
+      selectedBlocks: new Set(),
+      imageFile: null,
+      imagePreview: null,
+      removeImage: false,
+    });
+    if (editImageInputRef.current) editImageInputRef.current.value = "";
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditForm((f) => ({
+      ...f,
+      imageFile: file,
+      imagePreview: URL.createObjectURL(file),
+      removeImage: false,
+    }));
+  };
+
+  const toggleEditBlock = (blockKey: SkincareTimeOfDay) => {
+    setEditForm((f) => {
+      const next = new Set(f.selectedBlocks);
+      if (next.has(blockKey)) {
+        if (next.size > 1) next.delete(blockKey);
+      } else {
+        next.add(blockKey);
+      }
+      return { ...f, selectedBlocks: next };
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingProduct) return;
+    if (!editForm.name.trim()) {
+      toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (editForm.selectedBlocks.size === 0) {
+      toast({ title: "Selecione ao menos um bloco", variant: "destructive" });
+      return;
+    }
+    updateProductMutation.mutate({
+      id: editingProduct.id,
+      data: {
+        name: editForm.name.trim(),
+        usageInstructions: editForm.usageInstructions.trim(),
+        timeOfDay: Array.from(editForm.selectedBlocks),
+      },
+      imageFile: editForm.imageFile,
+      removeImage: editForm.removeImage,
     });
   };
 
@@ -797,6 +985,7 @@ export default function Receituario() {
                             ringClass={block.ringClass}
                             onToggle={toggleProduct}
                             onDelete={(id) => deleteProductMutation.mutate(id)}
+                            onEdit={handleStartEdit}
                             onUpdateBlocks={(id, blocks) =>
                               updateBlocksMutation.mutate({ id, timeOfDay: blocks })
                             }
@@ -945,6 +1134,182 @@ export default function Receituario() {
           </div>
         )}
       </div>
+
+      {/* Edição de produto */}
+      <Dialog
+        open={editingProduct !== null}
+        onOpenChange={(open) => {
+          if (!open) handleCloseEdit();
+        }}
+      >
+        <DialogContent className="sm:max-w-md" data-testid="dialog-edit-product">
+          <DialogHeader>
+            <DialogTitle>Editar produto</DialogTitle>
+            <DialogDescription>
+              Altere o nome, o modo de uso, os blocos e a imagem deste item.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Imagem */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
+                {editForm.imagePreview ? (
+                  <img
+                    src={editForm.imagePreview}
+                    alt="Nova imagem"
+                    className="h-full w-full object-cover"
+                  />
+                ) : editingProduct?.imageUrl && !editForm.removeImage ? (
+                  <img
+                    src={editingProduct.imageUrl}
+                    alt={editingProduct.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                    }}
+                  />
+                ) : (
+                  <ImagePlus className="h-5 w-5 text-muted-foreground/50" />
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <input
+                  ref={editImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleEditImageChange}
+                  data-testid="input-edit-product-image"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => editImageInputRef.current?.click()}
+                  data-testid="button-edit-select-image"
+                >
+                  <ImagePlus className="mr-1 h-3 w-3" />
+                  {editingProduct?.imageUrl || editForm.imagePreview
+                    ? "Trocar imagem"
+                    : "Adicionar imagem"}
+                </Button>
+
+                {(editForm.imagePreview ||
+                  (editingProduct?.imageUrl && !editForm.removeImage)) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto justify-start px-1 py-0.5 text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      if (editImageInputRef.current) editImageInputRef.current.value = "";
+                      setEditForm((f) => ({
+                        ...f,
+                        imageFile: null,
+                        imagePreview: null,
+                        // Só marca para remover no servidor se a imagem já estava salva.
+                        removeImage: f.imagePreview ? f.removeImage : true,
+                      }));
+                    }}
+                    data-testid="button-edit-remove-image"
+                  >
+                    <X className="mr-1 h-3 w-3" />
+                    Remover imagem
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Nome */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Nome *
+              </label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                className="h-9 text-sm"
+                data-testid="input-edit-product-name"
+                autoFocus
+              />
+            </div>
+
+            {/* Modo de uso */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Modo de uso
+              </label>
+              <Textarea
+                value={editForm.usageInstructions}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, usageInstructions: e.target.value }))
+                }
+                className="resize-none text-sm"
+                rows={3}
+                data-testid="input-edit-product-instructions"
+              />
+            </div>
+
+            {/* Blocos */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Exibir nos blocos
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {blocksConfig.map((b) => {
+                  const isChecked = editForm.selectedBlocks.has(b.key);
+                  return (
+                    <button
+                      key={b.key}
+                      type="button"
+                      onClick={() => toggleEditBlock(b.key)}
+                      data-testid={`edit-block-checkbox-${b.key}`}
+                      className={`flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors ${
+                        isChecked
+                          ? "border-transparent text-white"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                      style={isChecked ? { backgroundColor: b.colorHex } : {}}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isChecked ? "bg-white/60" : b.dotClass
+                        }`}
+                      />
+                      {b.shortLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCloseEdit}
+              data-testid="button-cancel-edit-product"
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveEdit}
+              disabled={updateProductMutation.isPending}
+              data-testid="button-save-edit-product"
+            >
+              {updateProductMutation.isPending ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="mr-1 h-3 w-3" />
+              )}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -761,10 +761,49 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       const product = await storage.updateSkincareProduct(productId, { imageUrl: publicUrl });
 
+      // Remove o arquivo anterior para não deixar lixo no bucket.
+      if (existingProduct.imageUrl && existingProduct.imageUrl !== publicUrl) {
+        try {
+          const antigo = existingProduct.imageUrl.replace("/product-images/", "");
+          await objectStorageService.deleteObject(`${privateDir}/product-images/${antigo}`);
+        } catch (err) {
+          console.error("Error deleting previous product image:", err);
+        }
+      }
+
       res.status(200).json({ imageUrl: publicUrl, product });
     } catch (error: any) {
       console.error("Error uploading product image:", error);
       res.status(500).json({ error: "Erro ao fazer upload da imagem" });
+    }
+  });
+
+  // Remove a imagem de um produto (mantém o produto)
+  app.delete("/api/skincare-products/:id/image", async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.id;
+      const existingProduct = await storage.getSkincareProductById(productId);
+      if (!existingProduct) {
+        res.status(404).json({ error: "Produto não encontrado" });
+        return;
+      }
+
+      if (existingProduct.imageUrl) {
+        try {
+          const imagePath = existingProduct.imageUrl.replace("/product-images/", "");
+          const privateDir = objectStorageService.getPrivateObjectDir();
+          await objectStorageService.deleteObject(`${privateDir}/product-images/${imagePath}`);
+        } catch (err) {
+          // O arquivo pode não existir mais (ex.: migração antiga) — seguimos assim mesmo.
+          console.error("Error deleting product image from object storage:", err);
+        }
+      }
+
+      const product = await storage.updateSkincareProduct(productId, { imageUrl: null });
+      res.status(200).json({ product });
+    } catch (error: any) {
+      console.error("Error removing product image:", error);
+      res.status(500).json({ error: "Erro ao remover imagem" });
     }
   });
 
