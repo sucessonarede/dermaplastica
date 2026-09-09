@@ -1,6 +1,11 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FACE_ZONES, zoneChips } from "@/components/FaceMap";
+import {
+  desenharPranchaDermalift,
+  PILAR_DA_COLUNA,
+  type ColunaKey,
+} from "./dermaliftBoard";
 
 interface QuoteData {
   patient: {
@@ -184,6 +189,28 @@ async function renderizarRosto(zonas: Record<string, string[]>): Promise<string 
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Agrupa os procedimentos do orçamento nas quatro colunas da prancha.
+ *
+ * "Além da Face" não é um pilar facial e fica de fora da página 1 — esses
+ * procedimentos continuam listados normalmente na página do orçamento.
+ */
+function planoPorColuna(quote: QuoteData): Partial<Record<ColunaKey, string[]>> {
+  const plano: Partial<Record<ColunaKey, string[]>> = {};
+
+  for (const item of quote.items) {
+    const protocolo = item.procedure.protocol as keyof typeof PILAR_DA_COLUNA;
+    const coluna = PILAR_DA_COLUNA[protocolo];
+    if (!coluna) continue;
+
+    const nome = item.procedure.name;
+    const lista = (plano[coluna] ??= []);
+    if (!lista.includes(nome)) lista.push(nome);
+  }
+
+  return plano;
+}
+
 export const generateQuotePDF = async (quote: QuoteData) => {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -191,7 +218,16 @@ export const generateQuotePDF = async (quote: QuoteData) => {
   const alturaPagina = doc.internal.pageSize.getHeight();
   const larguraUtil = larguraPagina - MARGEM * 2;
 
-  /* ---------------------------------------------------------------- capa --- */
+  /* --------------------------------------------- página 1: a prancha --- */
+
+  await desenharPranchaDermalift(doc, {
+    patientName: quote.patient.name,
+    plano: planoPorColuna(quote),
+  });
+
+  doc.addPage();
+
+  /* ------------------------------------------- página 2: o orçamento --- */
 
   const zonasPorPilar = quote.faceZones ?? {};
   const rosto = await renderizarRosto(zonasPorPilar);
@@ -510,15 +546,16 @@ export const generateQuotePDF = async (quote: QuoteData) => {
     yCondicoes + 9.8
   );
 
-  // Numeração, quando passa de uma página
+  // Numeração das páginas do orçamento. A prancha (página 1) fica de fora:
+  // ela é uma peça visual fechada e um número quebraria o rodapé.
   const paginas = doc.getNumberOfPages();
-  if (paginas > 1) {
-    for (let p = 1; p <= paginas; p++) {
+  if (paginas > 2) {
+    for (let p = 2; p <= paginas; p++) {
       doc.setPage(p);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(...TINTA_SUAVE);
-      doc.text(`${p} / ${paginas}`, larguraPagina / 2, alturaPagina - 10, {
+      doc.text(`${p - 1} / ${paginas - 1}`, larguraPagina / 2, alturaPagina - 10, {
         align: "center",
       });
     }

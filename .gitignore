@@ -22,3 +22,6 @@ vite.config.ts.*
 
 # pasta de descarte (apagar manualmente)
 _to_delete
+
+# PDFs de prévia entregues pelo chat
+Claude outputs/
