@@ -492,6 +492,7 @@ export default function QuoteBuilder() {
         procedure: {
           name: proc.name,
           protocol: proc.protocol,
+          description: proc.description,
         },
       };
     });

@@ -17,21 +17,21 @@ import {
  * procedimentos cada pilar tenha.
  */
 
-type RGB = [number, number, number];
+export type RGB = [number, number, number];
 
 /* -------------------------------------------------------------------------- */
 /* Paleta — amostrada da arte de referência                                    */
 /* -------------------------------------------------------------------------- */
 
-const BRANCO: RGB = [255, 255, 255];
-const OURO: RGB = [180, 147, 89];
-const OURO_CLARO: RGB = [218, 201, 172];
-const TINTA: RGB = [74, 56, 44];
-const TINTA_NOME: RGB = [85, 67, 55];
-const CINZA: RGB = [118, 103, 93];
-const CONCEITO: RGB = [107, 92, 83];
-const ROTULO: RGB = [97, 79, 70];
-const ITEM: RGB = [56, 51, 52];
+export const BRANCO: RGB = [255, 255, 255];
+export const OURO: RGB = [180, 147, 89];
+export const OURO_CLARO: RGB = [218, 201, 172];
+export const TINTA: RGB = [74, 56, 44];
+export const TINTA_NOME: RGB = [85, 67, 55];
+export const CINZA: RGB = [118, 103, 93];
+export const CONCEITO: RGB = [107, 92, 83];
+export const ROTULO: RGB = [97, 79, 70];
+export const ITEM: RGB = [56, 51, 52];
 
 /* -------------------------------------------------------------------------- */
 /* Os quatro pilares                                                            */
@@ -163,7 +163,7 @@ const ORNAMENTO = "/dermalift/monograma-ft.jpg";
 /* Utilidades de texto                                                          */
 /* -------------------------------------------------------------------------- */
 
-const SERIF = "Cormorant";
+export const SERIF = "Cormorant";
 
 /** Registra a fonte serifada no documento. Idempotente. */
 export function registrarFontes(doc: jsPDF): void {
@@ -177,9 +177,9 @@ export function registrarFontes(doc: jsPDF): void {
 }
 
 /** Peso intermediário da serifada, registrado no slot "italic" do jsPDF. */
-const SERIF_MEDIO = "italic" as const;
+export const SERIF_MEDIO = "italic" as const;
 
-interface OpcoesTexto {
+export interface OpcoesTexto {
   fonte?: string;
   estilo?: "normal" | "bold" | "italic";
   tamanho: number;
@@ -189,11 +189,11 @@ interface OpcoesTexto {
 }
 
 /** Largura real de um texto, já contando o espaçamento entre letras. */
-function larguraDe(doc: jsPDF, texto: string, espacamento: number): number {
+export function larguraDe(doc: jsPDF, texto: string, espacamento: number): number {
   return doc.getTextWidth(texto) + Math.max(0, texto.length - 1) * espacamento;
 }
 
-function aplicar(doc: jsPDF, o: OpcoesTexto): void {
+export function aplicar(doc: jsPDF, o: OpcoesTexto): void {
   doc.setFont(o.fonte ?? "helvetica", o.estilo ?? "normal");
   doc.setFontSize(o.tamanho);
   doc.setTextColor(o.cor[0], o.cor[1], o.cor[2]);
@@ -203,7 +203,7 @@ function aplicar(doc: jsPDF, o: OpcoesTexto): void {
  * Escreve um texto centralizado com espaçamento entre letras. O jsPDF não
  * considera o charSpace ao alinhar, então centralizamos na mão.
  */
-function centralizado(
+export function centralizado(
   doc: jsPDF,
   texto: string,
   xCentro: number,
@@ -217,7 +217,7 @@ function centralizado(
 }
 
 /** Barra horizontal cheia. */
-function barra(doc: jsPDF, x: number, y: number, largura: number, altura: number, cor: RGB) {
+export function barra(doc: jsPDF, x: number, y: number, largura: number, altura: number, cor: RGB) {
   doc.setFillColor(cor[0], cor[1], cor[2]);
   doc.rect(x, y, largura, altura, "F");
 }
@@ -327,7 +327,7 @@ function desenharPele(
 /* Carregamento das imagens                                                     */
 /* -------------------------------------------------------------------------- */
 
-function carregarImagem(src: string): Promise<HTMLImageElement | null> {
+export function carregarImagem(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -499,7 +499,7 @@ export async function desenharPranchaDermalift(
  * Reduz primeiro o espaçamento entre letras — que é generoso e é o primeiro a
  * sobrar — e só depois o corpo, preservando o ar da composição.
  */
-function ajustarNaLargura(
+export function ajustarNaLargura(
   doc: jsPDF,
   texto: string,
   xCentro: number,
