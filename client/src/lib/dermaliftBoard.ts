@@ -1,5 +1,9 @@
 import type jsPDF from "jspdf";
-import { CORMORANT_LIGHT_B64, CORMORANT_REGULAR_B64 } from "./fonts/cormorant";
+import {
+  CORMORANT_LIGHT_B64,
+  CORMORANT_REGULAR_B64,
+  CORMORANT_SEMIBOLD_B64,
+} from "./fonts/cormorant";
 
 /**
  * Página 1 do Projeto Dermalift — a prancha visual.
@@ -19,15 +23,15 @@ type RGB = [number, number, number];
 /* Paleta — amostrada da arte de referência                                    */
 /* -------------------------------------------------------------------------- */
 
-const FUNDO: RGB = [246, 238, 235];
-const BRONZE: RGB = [127, 97, 67];
-const TITULO: RGB = [45, 42, 38];
-const SUBTITULO: RGB = [122, 118, 114];
-const CONCEITO: RGB = [105, 101, 98];
-const ROTULO: RGB = [150, 146, 143];
-const ITEM: RGB = [88, 85, 82];
-const RODAPE: RGB = [125, 121, 118];
-const FIO: RGB = [223, 214, 208];
+const BRANCO: RGB = [255, 255, 255];
+const OURO: RGB = [180, 147, 89];
+const OURO_CLARO: RGB = [218, 201, 172];
+const TINTA: RGB = [74, 56, 44];
+const TINTA_NOME: RGB = [85, 67, 55];
+const CINZA: RGB = [118, 103, 93];
+const CONCEITO: RGB = [107, 92, 83];
+const ROTULO: RGB = [97, 79, 70];
+const ITEM: RGB = [56, 51, 52];
 
 /* -------------------------------------------------------------------------- */
 /* Os quatro pilares                                                            */
@@ -49,13 +53,11 @@ interface Coluna {
   titulo: string;
   subtitulo: string;
   conceito: string;
-  /** Cor do algarismo — cada coluna tem o seu tom. */
-  cor: RGB;
   /** Arquivo do rosto-base, servido de /public. */
   imagem: string;
   /**
-   * Profundidade do ponto luminoso na miniatura da pele, de 0 (superfície)
-   * a 1 (subcutâneo). É o que comunica que uma etapa não substitui a outra.
+   * Profundidade do ponto luminoso no corte da pele, de 0 (superfície) a 1
+   * (subcutâneo). É o que comunica que uma etapa não substitui a outra.
    */
   profundidade: number;
 }
@@ -68,7 +70,6 @@ const COLUNAS: Coluna[] = [
     subtitulo: "SUSTENTAÇÃO",
     conceito:
       "Reposicionar e sustentar os tecidos, devolvendo firmeza e combatendo a flacidez.",
-    cor: [151, 109, 112],
     imagem: "/dermalift/rosto-lift.jpg",
     profundidade: 0.87,
   },
@@ -79,7 +80,6 @@ const COLUNAS: Coluna[] = [
     subtitulo: "ESTRUTURAÇÃO",
     conceito:
       "Recuperar contornos, proporções e pontos estruturais para devolver equilíbrio ao rosto.",
-    cor: [162, 139, 115],
     imagem: "/dermalift/rosto-sculpt.jpg",
     profundidade: 0.63,
   },
@@ -89,7 +89,6 @@ const COLUNAS: Coluna[] = [
     titulo: "BEAUTY",
     subtitulo: "HARMONIA",
     conceito: "Refinar detalhes que harmonizam e valorizam seus traços naturais.",
-    cor: [153, 117, 117],
     imagem: "/dermalift/rosto-beauty.jpg",
     profundidade: 0.4,
   },
@@ -99,60 +98,66 @@ const COLUNAS: Coluna[] = [
     titulo: "SKIN",
     subtitulo: "QUALIDADE DA PELE",
     conceito: "Melhorar a qualidade da pele, textura, viço e luminosidade.",
-    cor: [158, 131, 107],
     imagem: "/dermalift/rosto-skin.jpg",
     profundidade: 0.12,
   },
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Grade vertical — todos os Y são fixos                                        */
+/* Grade — medidas tiradas da arte de referência, em mm                        */
 /* -------------------------------------------------------------------------- */
 
-const MARGEM = 13;
 const LARGURA_PAGINA = 210;
 const ALTURA_PAGINA = 297;
-const LARGURA_UTIL = LARGURA_PAGINA - MARGEM * 2;
-const LARGURA_COLUNA = LARGURA_UTIL / 4;
+
+/** As colunas sangram de margem a margem: quatro faixas iguais. */
+const LARGURA_COLUNA = LARGURA_PAGINA / 4;
 
 const Y = {
-  monograma: 13,
-  alturaMonograma: 14,
-  clinica: 34,
-  especialidade: 38.5,
+  logo: 8,
+  alturaLogo: 21.5,
 
-  projetoDe: 47,
-  dermalift: 59.5,
-  rejuvenescimento: 65.5,
-  ornamentoTopo: 72,
-  paciente: 78.5,
+  fioDuploA: 35.4,
+  fioDuploB: 37.6,
+  espessuraFio: 1.1,
 
-  numero: 91,
-  titulo: 99,
-  subtitulo: 103.5,
+  projeto: 51.2,
+  dermalift: 63.6,
+  rejuvenescimento: 69.6,
+  barra: 74.3,
+  alturaBarra: 1.1,
+  larguraBarra: 26.4,
+  nome: 85.2,
 
-  rostoTopo: 107,
-  rostoAltura: 62,
+  numero: 100.5,
+  titulo: 109.3,
+  subtitulo: 114.5,
 
-  conceito: 175,
+  rostoTopo: 124,
+  rostoAltura: 63,
 
-  ornamentoPilar: 189,
-  seuPlano: 195,
-  planoTopo: 201,
-  alturaPlano: 22,
+  conceito: 193.9,
+  entrelinhaConceito: 3.3,
 
-  peleTopo: 227,
-  peleAltura: 26,
+  ornamento: 204,
+  alturaOrnamento: 3.7,
 
-  rodape: 280,
+  seuPlano: 212,
+  planoTopo: 217.5,
+  alturaPlano: 21,
+
+  pele: 242.9,
+  ladoPele: 28.1,
+
+  rodape: 288.2,
 };
 
-/** Extremos do fio vertical que separa as colunas. */
-const FIO_TOPO = 85;
-const FIO_BASE = 258;
+/** Extremos dos fios verticais que separam as colunas. */
+const FIO_TOPO = 94.5;
+const FIO_BASE = 274.4;
 
-/** Monograma da clínica, servido de /public. */
-const MONOGRAMA = "/dermalift/monograma-ft.jpg";
+const LOGO = "/dermalift/logo-flavia.jpg";
+const ORNAMENTO = "/dermalift/monograma-ft.jpg";
 
 /* -------------------------------------------------------------------------- */
 /* Utilidades de texto                                                          */
@@ -162,17 +167,21 @@ const SERIF = "Cormorant";
 
 /** Registra a fonte serifada no documento. Idempotente. */
 export function registrarFontes(doc: jsPDF): void {
-  const jaTem = (doc.getFontList() as Record<string, string[]>)[SERIF];
-  if (jaTem) return;
+  if ((doc.getFontList() as Record<string, string[]>)[SERIF]) return;
   doc.addFileToVFS("Cormorant-Light.ttf", CORMORANT_LIGHT_B64);
   doc.addFont("Cormorant-Light.ttf", SERIF, "normal");
   doc.addFileToVFS("Cormorant-Regular.ttf", CORMORANT_REGULAR_B64);
-  doc.addFont("Cormorant-Regular.ttf", SERIF, "bold");
+  doc.addFont("Cormorant-Regular.ttf", SERIF, "italic");
+  doc.addFileToVFS("Cormorant-SemiBold.ttf", CORMORANT_SEMIBOLD_B64);
+  doc.addFont("Cormorant-SemiBold.ttf", SERIF, "bold");
 }
+
+/** Peso intermediário da serifada, registrado no slot "italic" do jsPDF. */
+const SERIF_MEDIO = "italic" as const;
 
 interface OpcoesTexto {
   fonte?: string;
-  estilo?: "normal" | "bold";
+  estilo?: "normal" | "bold" | "italic";
   tamanho: number;
   cor: RGB;
   /** Espaço extra entre caracteres, em mm. É o que dá o ar de alta-costura. */
@@ -181,8 +190,7 @@ interface OpcoesTexto {
 
 /** Largura real de um texto, já contando o espaçamento entre letras. */
 function larguraDe(doc: jsPDF, texto: string, espacamento: number): number {
-  const base = doc.getTextWidth(texto);
-  return base + Math.max(0, texto.length - 1) * espacamento;
+  return doc.getTextWidth(texto) + Math.max(0, texto.length - 1) * espacamento;
 }
 
 function aplicar(doc: jsPDF, o: OpcoesTexto): void {
@@ -208,154 +216,111 @@ function centralizado(
   doc.text(texto, x, y, esp ? { charSpace: esp } : undefined);
 }
 
-/**
- * Nome da paciente, centralizado e bem espaçado.
- *
- * Nomes longos são comuns; em vez de deixar estourar a margem, reduzimos
- * primeiro o espaçamento entre letras (que é generoso) e só depois o corpo.
- */
-function desenharNome(doc: jsPDF, nome: string, xCentro: number, y: number): void {
-  if (!nome) return;
-  const disponivel = LARGURA_UTIL - 8;
-
-  const tentativas = [
-    { tamanho: 14, espacamento: 2.8 },
-    { tamanho: 14, espacamento: 1.9 },
-    { tamanho: 12.5, espacamento: 1.4 },
-    { tamanho: 11, espacamento: 1 },
-    { tamanho: 9.5, espacamento: 0.6 },
-  ];
-
-  for (let i = 0; i < tentativas.length; i++) {
-    const { tamanho, espacamento } = tentativas[i];
-    const opcoes: OpcoesTexto = {
-      fonte: SERIF,
-      estilo: "bold",
-      tamanho,
-      cor: TITULO,
-      espacamento,
-    };
-    aplicar(doc, opcoes);
-    const cabe = larguraDe(doc, nome, espacamento) <= disponivel;
-    if (cabe || i === tentativas.length - 1) {
-      centralizado(doc, nome, xCentro, y, opcoes);
-      return;
-    }
-  }
-}
-
-/** Losango minúsculo usado como ornamento entre as seções. */
-function ornamento(doc: jsPDF, x: number, y: number, raio: number, cor: RGB): void {
+/** Barra horizontal cheia. */
+function barra(doc: jsPDF, x: number, y: number, largura: number, altura: number, cor: RGB) {
   doc.setFillColor(cor[0], cor[1], cor[2]);
-  doc.triangle(x, y - raio, x - raio * 0.62, y, x, y + raio, "F");
-  doc.triangle(x, y - raio, x + raio * 0.62, y, x, y + raio, "F");
+  doc.rect(x, y, largura, altura, "F");
 }
 
 /* -------------------------------------------------------------------------- */
-/* Miniatura do corte da pele                                                   */
+/* Corte da pele                                                                */
 /* -------------------------------------------------------------------------- */
 
 /**
  * Corte transversal da pele com um ponto luminoso na profundidade daquele
- * pilar. Desenhado em vetor: imprime nítido em qualquer tamanho e o ponto
- * pode ser posicionado com precisão.
+ * pilar, dentro de um quadro de fio dourado. Desenhado em vetor: imprime
+ * nítido em qualquer tamanho e o ponto fica exatamente onde deve.
  */
 function desenharPele(
   doc: jsPDF,
   x: number,
   y: number,
-  largura: number,
-  altura: number,
-  profundidade: number,
-  cor: RGB
+  lado: number,
+  profundidade: number
 ): void {
   const FIM_EPIDERME = 0.12;
   const FIM_DERME = 0.58;
 
   const camadas: Array<{ ate: number; cor: RGB }> = [
-    { ate: FIM_EPIDERME, cor: [238, 214, 202] }, // epiderme
-    { ate: FIM_DERME, cor: [216, 172, 158] }, // derme
-    { ate: 1, cor: [237, 209, 195] }, // subcutâneo
+    { ate: FIM_EPIDERME, cor: [242, 224, 212] },
+    { ate: FIM_DERME, cor: [226, 190, 175] },
+    { ate: 1, cor: [243, 220, 206] },
   ];
 
   let inicio = 0;
   for (const camada of camadas) {
     doc.setFillColor(camada.cor[0], camada.cor[1], camada.cor[2]);
-    doc.rect(x, y + altura * inicio, largura, altura * (camada.ate - inicio), "F");
+    doc.rect(x, y + lado * inicio, lado, lado * (camada.ate - inicio), "F");
     inicio = camada.ate;
   }
 
-  // Estrato córneo: fio mais claro rente à superfície
-  doc.setFillColor(247, 231, 220);
-  doc.rect(x, y, largura, altura * 0.03, "F");
+  // Estrato córneo
+  doc.setFillColor(250, 239, 231);
+  doc.rect(x, y, lado, lado * 0.028, "F");
 
   // Fibras da derme
-  doc.setDrawColor(205, 156, 141);
+  doc.setDrawColor(213, 170, 154);
   doc.setLineWidth(0.08);
   for (let i = 1; i <= 3; i++) {
-    const fy = y + altura * (FIM_EPIDERME + ((FIM_DERME - FIM_EPIDERME) * i) / 4);
-    doc.line(x + largura * 0.08, fy, x + largura * 0.92, fy);
+    const fy = y + lado * (FIM_EPIDERME + ((FIM_DERME - FIM_EPIDERME) * i) / 4);
+    doc.line(x + lado * 0.07, fy, x + lado * 0.93, fy);
   }
 
   // Lóbulos de gordura no subcutâneo — leem como tecido, não como gráfico
-  doc.setDrawColor(219, 181, 166);
+  doc.setDrawColor(226, 192, 176);
   doc.setLineWidth(0.11);
-  const raio = altura * 0.062;
+  const raio = lado * 0.058;
   for (let linha = 0; ; linha++) {
-    const cy = y + altura * FIM_DERME + raio * 1.15 + linha * raio * 1.9;
-    if (cy + raio > y + altura - raio * 0.15) break;
+    const cy = y + lado * FIM_DERME + raio * 1.15 + linha * raio * 1.9;
+    if (cy + raio > y + lado - raio * 0.15) break;
     const deslocamento = linha % 2 ? raio : 0;
-    for (let cx = x + raio * 1.1 + deslocamento; cx < x + largura - raio * 0.6; cx += raio * 2.15) {
+    for (let cx = x + raio * 1.1 + deslocamento; cx < x + lado - raio * 0.6; cx += raio * 2.15) {
       doc.circle(cx, cy, raio, "S");
     }
   }
 
-  // Linhas divisórias entre as camadas
-  doc.setDrawColor(203, 162, 147);
+  // Divisórias entre camadas
+  doc.setDrawColor(211, 166, 149);
   doc.setLineWidth(0.1);
-  doc.line(x, y + altura * FIM_EPIDERME, x + largura, y + altura * FIM_EPIDERME);
-  doc.line(x, y + altura * FIM_DERME, x + largura, y + altura * FIM_DERME);
-
-  // Contorno externo do bloco
-  doc.setDrawColor(198, 168, 155);
-  doc.setLineWidth(0.22);
-  doc.rect(x, y, largura, altura, "S");
+  doc.line(x, y + lado * FIM_EPIDERME, x + lado, y + lado * FIM_EPIDERME);
+  doc.line(x, y + lado * FIM_DERME, x + lado, y + lado * FIM_DERME);
 
   /* --------------------------------------------------- ponto luminoso --- */
 
-  const xLuz = x + largura * 0.5;
-  const yLuz = y + altura * profundidade;
+  const xLuz = x + lado * 0.5;
+  const yLuz = y + lado * profundidade;
 
-  // Trajeto até a profundidade tratada
-  doc.setDrawColor(255, 252, 244);
-  doc.setLineWidth(0.45);
+  doc.setDrawColor(255, 253, 246);
+  doc.setLineWidth(0.5);
   doc.line(xLuz, y, xLuz, yLuz);
-  doc.setDrawColor(cor[0], cor[1], cor[2]);
-  doc.setLineWidth(0.15);
+  doc.setDrawColor(OURO[0], OURO[1], OURO[2]);
+  doc.setLineWidth(0.16);
   doc.line(xLuz, y, xLuz, yLuz);
 
-  // Halo: círculos concêntricos com opacidade decrescente simulam o brilho
   const anyDoc = doc as unknown as {
     setGState: (g: unknown) => void;
     GState: new (o: Record<string, number>) => unknown;
   };
   const temGState = typeof anyDoc.setGState === "function";
 
-  const halos = [
-    { r: altura * 0.16, opacidade: 0.18 },
-    { r: altura * 0.1, opacidade: 0.32 },
-    { r: altura * 0.055, opacidade: 0.6 },
-  ];
-  for (const halo of halos) {
+  for (const halo of [
+    { r: lado * 0.15, opacidade: 0.2 },
+    { r: lado * 0.095, opacidade: 0.36 },
+    { r: lado * 0.05, opacidade: 0.65 },
+  ]) {
     if (temGState) anyDoc.setGState(new anyDoc.GState({ opacity: halo.opacidade }));
-    doc.setFillColor(255, 246, 224);
+    doc.setFillColor(255, 247, 226);
     doc.circle(xLuz, yLuz, halo.r, "F");
   }
   if (temGState) anyDoc.setGState(new anyDoc.GState({ opacity: 1 }));
 
-  // Núcleo, no tom do pilar
-  doc.setFillColor(cor[0], cor[1], cor[2]);
-  doc.circle(xLuz, yLuz, altura * 0.022, "F");
+  doc.setFillColor(OURO[0], OURO[1], OURO[2]);
+  doc.circle(xLuz, yLuz, lado * 0.021, "F");
+
+  // Moldura dourada, por último, para fechar o quadro
+  doc.setDrawColor(OURO_CLARO[0], OURO_CLARO[1], OURO_CLARO[2]);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, lado, lado, "S");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -388,171 +353,212 @@ export async function desenharPranchaDermalift(
 ): Promise<void> {
   registrarFontes(doc);
 
-  const [monograma, ...rostos] = await Promise.all([
-    carregarImagem(MONOGRAMA),
+  const [logo, ornamento, ...rostos] = await Promise.all([
+    carregarImagem(LOGO),
+    carregarImagem(ORNAMENTO),
     ...COLUNAS.map((c) => carregarImagem(c.imagem)),
   ]);
 
+  const centro = LARGURA_PAGINA / 2;
+
   /* ------------------------------------------------------------- fundo --- */
 
-  doc.setFillColor(FUNDO[0], FUNDO[1], FUNDO[2]);
-  doc.rect(0, 0, LARGURA_PAGINA, ALTURA_PAGINA, "F");
-
-  const centro = LARGURA_PAGINA / 2;
+  barra(doc, 0, 0, LARGURA_PAGINA, ALTURA_PAGINA, BRANCO);
 
   /* ---------------------------------------------------------- cabeçalho --- */
 
-  if (monograma) {
-    const altura = Y.alturaMonograma;
-    const largura = (altura * monograma.width) / monograma.height;
-    doc.addImage(monograma, "JPEG", centro - largura / 2, Y.monograma, largura, altura);
+  // O logotipo já traz o monograma e a assinatura da clínica — nada de texto
+  // composto aqui, para a marca chegar à paciente como foi desenhada.
+  if (logo) {
+    const altura = Y.alturaLogo;
+    const largura = (altura * logo.width) / logo.height;
+    doc.addImage(logo, "JPEG", centro - largura / 2, Y.logo, largura, altura);
   }
 
-  centralizado(doc, "FLÁVIA THEREZA", centro, Y.clinica, {
-    fonte: SERIF,
-    tamanho: 18,
-    cor: BRONZE,
-    espacamento: 1.5,
-  });
-  centralizado(doc, "DERMATOLOGIA", centro, Y.especialidade, {
-    tamanho: 6,
-    cor: SUBTITULO,
-    espacamento: 1.6,
-  });
+  // Fio duplo de sangria a sangria, fechando o cabeçalho da marca
+  barra(doc, 0, Y.fioDuploA, LARGURA_PAGINA, Y.espessuraFio, OURO);
+  barra(doc, 0, Y.fioDuploB, LARGURA_PAGINA, Y.espessuraFio, OURO);
 
-  centralizado(doc, "PROJETO DE", centro, Y.projetoDe, {
-    tamanho: 7.5,
-    cor: TITULO,
-    espacamento: 2.6,
+  centralizado(doc, "PROJETO", centro, Y.projeto, {
+    tamanho: 15,
+    cor: TINTA,
+    espacamento: 2.8,
   });
 
   centralizado(doc, "DERMALIFT", centro, Y.dermalift, {
     fonte: SERIF,
-    tamanho: 40,
-    cor: BRONZE,
-    espacamento: 3.4,
+    tamanho: 37,
+    cor: OURO,
+    espacamento: 3.2,
   });
 
-  centralizado(doc, "PROJETO DE REJUVENESCIMENTO PERSONALIZADO", centro, Y.rejuvenescimento, {
-    tamanho: 6.5,
-    cor: TITULO,
-    espacamento: 1.5,
+  centralizado(doc, "REJUVENESCIMENTO PERSONALIZADO", centro, Y.rejuvenescimento, {
+    tamanho: 9,
+    cor: CINZA,
+    espacamento: 0.7,
   });
 
-  ornamento(doc, centro, Y.ornamentoTopo, 1.5, BRONZE);
+  barra(doc, centro - Y.larguraBarra / 2, Y.barra, Y.larguraBarra, Y.alturaBarra, OURO);
 
-  desenharNome(doc, (dados.patientName || "").toUpperCase(), centro, Y.paciente);
+  desenharNome(doc, (dados.patientName || "").toUpperCase(), centro, Y.nome);
 
   /* ------------------------------------------------------- fios da grade --- */
 
-  doc.setDrawColor(FIO[0], FIO[1], FIO[2]);
-  doc.setLineWidth(0.2);
+  doc.setDrawColor(OURO_CLARO[0], OURO_CLARO[1], OURO_CLARO[2]);
+  doc.setLineWidth(0.25);
   for (let i = 1; i < 4; i++) {
-    const x = MARGEM + LARGURA_COLUNA * i;
+    const x = LARGURA_COLUNA * i;
     doc.line(x, FIO_TOPO, x, FIO_BASE);
   }
 
   /* ----------------------------------------------------------- colunas --- */
 
   COLUNAS.forEach((coluna, indice) => {
-    const xInicio = MARGEM + LARGURA_COLUNA * indice;
+    const xInicio = LARGURA_COLUNA * indice;
     const xCentro = xInicio + LARGURA_COLUNA / 2;
-    const larguraTexto = LARGURA_COLUNA - 9;
+    const larguraTexto = LARGURA_COLUNA - 12;
 
-    /* número */
     centralizado(doc, coluna.numero, xCentro, Y.numero, {
       fonte: SERIF,
-      tamanho: 26,
-      cor: coluna.cor,
+      tamanho: 23,
+      cor: OURO,
       espacamento: 0.8,
     });
 
-    /* título e subtítulo */
     centralizado(doc, coluna.titulo, xCentro, Y.titulo, {
-      tamanho: 10,
-      cor: TITULO,
-      espacamento: 1.5,
-    });
-    centralizado(doc, coluna.subtitulo, xCentro, Y.subtitulo, {
-      tamanho: 5.6,
-      cor: SUBTITULO,
-      espacamento: 0.9,
+      fonte: SERIF,
+      estilo: "bold",
+      tamanho: 23,
+      cor: TINTA,
+      espacamento: 0.5,
     });
 
-    /* rosto — encostado na base da banda, para os quatro se alinharem */
+    centralizado(doc, coluna.subtitulo, xCentro, Y.subtitulo, {
+      tamanho: 8,
+      cor: CINZA,
+      espacamento: 0.35,
+    });
+
+    /* rosto — topo fixo, para os quatro se alinharem */
     const rosto = rostos[indice];
     if (rosto) {
-      const proporcao = rosto.width / rosto.height;
       const altura = Y.rostoAltura;
-      const largura = altura * proporcao;
-      // Os arquivos já vêm achatados sobre a cor de fundo da página, sem canal
-      // alfa: em JPEG o documento fica ~10x mais leve para enviar à paciente.
-      doc.addImage(
-        rosto,
-        "JPEG",
-        xCentro - largura / 2,
-        Y.rostoTopo,
-        largura,
-        altura
-      );
+      const largura = (altura * rosto.width) / rosto.height;
+      doc.addImage(rosto, "JPEG", xCentro - largura / 2, Y.rostoTopo, largura, altura);
     }
 
     /* frase conceitual */
-    aplicar(doc, { tamanho: 7, cor: CONCEITO });
+    aplicar(doc, { tamanho: 7.5, cor: CONCEITO });
     const linhas = doc.splitTextToSize(coluna.conceito, larguraTexto) as string[];
     linhas.forEach((linha, i) => {
-      centralizado(doc, linha, xCentro, Y.conceito + i * 3.7, {
-        tamanho: 7,
+      centralizado(doc, linha, xCentro, Y.conceito + i * Y.entrelinhaConceito, {
+        tamanho: 7.5,
         cor: CONCEITO,
       });
     });
 
-    /* ornamento + rótulo */
-    ornamento(doc, xCentro, Y.ornamentoPilar, 1.2, coluna.cor);
+    /* monograma como ornamento de seção */
+    if (ornamento) {
+      const altura = Y.alturaOrnamento;
+      const largura = (altura * ornamento.width) / ornamento.height;
+      doc.addImage(ornamento, "JPEG", xCentro - largura / 2, Y.ornamento, largura, altura);
+    }
 
     centralizado(doc, "SEU PLANO", xCentro, Y.seuPlano, {
-      tamanho: 5.8,
+      estilo: "bold",
+      tamanho: 7,
       cor: ROTULO,
-      espacamento: 1.3,
+      espacamento: 0.9,
     });
 
     /* procedimentos — a altura da banda é fixa; o texto é que se ajusta */
     const itens = dados.plano[coluna.key] ?? [];
     if (itens.length) {
-      desenharPlano(doc, itens, xInicio + 4.5, Y.planoTopo, LARGURA_COLUNA - 9, Y.alturaPlano);
+      desenharPlano(doc, itens, xCentro, Y.planoTopo, larguraTexto, Y.alturaPlano);
     }
 
-    /* miniatura da pele */
-    const larguraPele = LARGURA_COLUNA * 0.56;
-    desenharPele(
-      doc,
-      xCentro - larguraPele / 2,
-      Y.peleTopo,
-      larguraPele,
-      Y.peleAltura,
-      coluna.profundidade,
-      coluna.cor
-    );
+    /* corte da pele */
+    desenharPele(doc, xCentro - Y.ladoPele / 2, Y.pele, Y.ladoPele, coluna.profundidade);
   });
 
   /* ------------------------------------------------------------ rodapé --- */
 
-  // Fio de largura total interrompido pelo losango, como no modelo.
-  const yFio = Y.rodape - 8;
-  const vao = 5;
-  doc.setDrawColor(FIO[0], FIO[1], FIO[2]);
-  doc.setLineWidth(0.2);
-  doc.line(MARGEM, yFio, centro - vao, yFio);
-  doc.line(centro + vao, yFio, LARGURA_PAGINA - MARGEM, yFio);
-
-  ornamento(doc, centro, yFio, 1.4, BRONZE);
-  centralizado(
+  ajustarNaLargura(
     doc,
     "UM PROJETO. DIFERENTES CAMADAS. UM RESULTADO CONSTRUÍDO POR INTEIRO.",
     centro,
     Y.rodape,
-    { tamanho: 6.4, cor: RODAPE, espacamento: 1.15 }
+    LARGURA_PAGINA - 26,
+    { fonte: SERIF, estilo: "bold", tamanho: 13, cor: ROTULO, espacamento: 0.55 }
   );
+}
+
+/**
+ * Escreve um texto centralizado encolhendo-o até caber em `disponivel`.
+ *
+ * Reduz primeiro o espaçamento entre letras — que é generoso e é o primeiro a
+ * sobrar — e só depois o corpo, preservando o ar da composição.
+ */
+function ajustarNaLargura(
+  doc: jsPDF,
+  texto: string,
+  xCentro: number,
+  y: number,
+  disponivel: number,
+  base: OpcoesTexto
+): void {
+  if (!texto) return;
+  const espBase = base.espacamento ?? 0;
+
+  for (let passo = 0; passo < 12; passo++) {
+    const fatorEsp = Math.max(0, 1 - passo * 0.22);
+    const fatorCorpo = passo <= 4 ? 1 : 1 - (passo - 4) * 0.06;
+    const opcoes: OpcoesTexto = {
+      ...base,
+      tamanho: base.tamanho * fatorCorpo,
+      espacamento: espBase * fatorEsp,
+    };
+    aplicar(doc, opcoes);
+    if (larguraDe(doc, texto, opcoes.espacamento ?? 0) <= disponivel || passo === 11) {
+      centralizado(doc, texto, xCentro, y, opcoes);
+      return;
+    }
+  }
+}
+
+/**
+ * Nome da paciente, centralizado e bem espaçado.
+ *
+ * Nomes longos são comuns; em vez de deixar estourar a margem, reduzimos
+ * primeiro o espaçamento entre letras (que é generoso) e só depois o corpo.
+ */
+function desenharNome(doc: jsPDF, nome: string, xCentro: number, y: number): void {
+  if (!nome) return;
+  const disponivel = LARGURA_PAGINA - 30;
+
+  const tentativas = [
+    { tamanho: 19, espacamento: 1.6 },
+    { tamanho: 19, espacamento: 1 },
+    { tamanho: 16, espacamento: 0.8 },
+    { tamanho: 13.5, espacamento: 0.6 },
+    { tamanho: 11.5, espacamento: 0.4 },
+  ];
+
+  for (let i = 0; i < tentativas.length; i++) {
+    const { tamanho, espacamento } = tentativas[i];
+    const opcoes: OpcoesTexto = {
+      fonte: SERIF,
+      estilo: SERIF_MEDIO,
+      tamanho,
+      cor: TINTA_NOME,
+      espacamento,
+    };
+    aplicar(doc, opcoes);
+    if (larguraDe(doc, nome, espacamento) <= disponivel || i === tentativas.length - 1) {
+      centralizado(doc, nome, xCentro, y, opcoes);
+      return;
+    }
+  }
 }
 
 /**
@@ -565,21 +571,22 @@ export async function desenharPranchaDermalift(
 function desenharPlano(
   doc: jsPDF,
   itens: string[],
-  x: number,
+  xCentro: number,
   y: number,
   largura: number,
   alturaMaxima: number
 ): void {
   const escalas = [
-    { tamanho: 7.2, entrelinha: 3.9 },
-    { tamanho: 6.6, entrelinha: 3.5 },
-    { tamanho: 6.1, entrelinha: 3.15 },
-    { tamanho: 5.6, entrelinha: 2.85 },
+    { tamanho: 9.5, entrelinha: 4.6 },
+    { tamanho: 8.5, entrelinha: 4.1 },
+    { tamanho: 7.5, entrelinha: 3.6 },
+    { tamanho: 6.6, entrelinha: 3.2 },
   ];
 
   for (let i = 0; i < escalas.length; i++) {
     const { tamanho, entrelinha } = escalas[i];
-    aplicar(doc, { tamanho, cor: ITEM });
+    const opcoes: OpcoesTexto = { estilo: "bold", tamanho, cor: ITEM };
+    aplicar(doc, opcoes);
 
     const linhas: string[] = [];
     for (const item of itens) {
@@ -595,7 +602,7 @@ function desenharPlano(
       : linhas.slice(0, Math.max(1, Math.floor(alturaMaxima / entrelinha)));
 
     visiveis.forEach((linha, indice) => {
-      doc.text(linha, x, y + indice * entrelinha);
+      centralizado(doc, linha, xCentro, y + indice * entrelinha, opcoes);
     });
     return;
   }
