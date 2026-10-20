@@ -25,3 +25,6 @@ _to_delete
 
 # PDFs de prévia entregues pelo chat
 Claude outputs/
+
+# restos do mount ao sobrescrever arquivo aberto
+.fuse_hidden*

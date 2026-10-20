@@ -34,6 +34,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import FaceMap from "@/components/FaceMap";
 import { useToast } from "@/hooks/use-toast";
+import { useDragScroll } from "@/hooks/use-drag-scroll";
 import { type Procedure, type DermaliftProtocol, type Patient } from "@shared/schema";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 
@@ -45,6 +46,8 @@ interface SelectedItem {
 
 export default function QuoteBuilder() {
   const [location, setLocation] = useLocation();
+  // Permite arrastar a faixa dos pilares na horizontal, sem usar a barra.
+  const rolagem = useDragScroll<HTMLDivElement>();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedItems, setSelectedItems] = useState<Map<string, SelectedItem>>(new Map());
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
@@ -492,7 +495,6 @@ export default function QuoteBuilder() {
         procedure: {
           name: proc.name,
           protocol: proc.protocol,
-          description: proc.description,
         },
       };
     });
@@ -683,7 +685,11 @@ export default function QuoteBuilder() {
       )}
 
       {/* Linha Horizontal: 4 Pilares + Painel de Resumo */}
-      <div className="flex gap-6 overflow-x-auto pb-4">
+      <div
+        ref={rolagem.ref}
+        className={`flex gap-6 overflow-x-auto pb-4 ${rolagem.className}`}
+        data-testid="pilares-scroll"
+      >
         {isLoadingProcedures ? (
           <div className="w-full text-center py-8 text-muted-foreground">
             Carregando procedimentos...

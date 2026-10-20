@@ -18,11 +18,11 @@ interface QuoteData {
   items: Array<{
     quantity: string | number;
     subtotal: string | number;
+    /** Observação digitada no Resumo do Protocolo — vira "O que ele entrega". */
     note?: string | null;
     procedure: {
       name: string;
       protocol: string;
-      description?: string | null;
     };
   }>;
   total: string | number;
@@ -89,7 +89,7 @@ function linhasDoOrcamento(quote: QuoteData): LinhaOrcamento[] {
     return {
       pilar,
       nome,
-      descricao: item.procedure.description ?? null,
+      descricao: item.note ?? null,
       valor: paraNumero(item.subtotal),
     };
   });
@@ -132,6 +132,7 @@ export const generateQuotePDF = async (quote: QuoteData) => {
     valorProjeto: total,
     economia: desconto,
     parcelas: quote.installments ?? null,
+    entrada: paraNumero(quote.downPayment),
   });
 
   doc.save(`Projeto_Dermalift_${quote.patient.name.replace(/\s+/g, "_")}.pdf`);

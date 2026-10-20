@@ -82,7 +82,7 @@ const Y = {
   parcelas: 257.5,
 
   divisorTopo: 228,
-  divisorBase: 259.5,
+  divisorBase: 262.5,
 
   caixaTopo: 265.3,
   caixaBase: 290,
@@ -128,6 +128,8 @@ export interface DadosOrcamento {
   /** Quanto o projeto economiza. Sem desconto, o bloco não aparece. */
   economia: number;
   parcelas?: number | null;
+  /** Entrada paga à vista. As parcelas incidem sobre o saldo. */
+  entrada?: number | null;
 }
 
 const moeda = (v: number): string =>
@@ -455,16 +457,45 @@ function desenharFechamento(
     doc.text(valor, xTexto + larguraEtiqueta, yTexto);
   }
 
-  const parcelas = dados.parcelas ?? 1;
-  if (parcelas > 1) {
-    centralizado(
-      doc,
-      `${parcelas}x ${moeda(dados.valorProjeto / parcelas)}`,
-      xFecho,
-      Y.parcelas,
-      { tamanho: 12, cor: OURO }
-    );
+  desenharCondicoes(doc, dados, xFecho);
+}
+
+/**
+ * Entrada e parcelamento, logo abaixo do valor do projeto.
+ *
+ * Quando há entrada, as parcelas incidem sobre o saldo — é assim que o
+ * Resumo do Protocolo calcula na tela, e o PDF tem que bater com ela.
+ */
+function desenharCondicoes(doc: jsPDF, dados: DadosOrcamento, xFecho: number): void {
+  const entrada = Math.min(Math.max(dados.entrada ?? 0, 0), dados.valorProjeto);
+  const parcelas = Math.max(1, dados.parcelas ?? 1);
+  const saldo = dados.valorProjeto - entrada;
+
+  const linhas: string[] = [];
+  if (entrada > 0.005) {
+    linhas.push(`Entrada de ${moeda(entrada)}`);
+    if (saldo > 0.005) {
+      linhas.push(
+        parcelas > 1
+          ? `+ ${parcelas}x ${moeda(saldo / parcelas)}`
+          : `+ ${moeda(saldo)}`
+      );
+    }
+  } else if (parcelas > 1) {
+    linhas.push(`${parcelas}x ${moeda(saldo / parcelas)}`);
   }
+
+  if (!linhas.length) return;
+
+  // A primeira linha fica logo abaixo do selo; a segunda desce a partir dela.
+  const entrelinha = 5.2;
+  const primeira = linhas.length > 1 ? Y.parcelas - 1 : Y.parcelas;
+  linhas.forEach((linha, i) => {
+    centralizado(doc, linha, xFecho, primeira + i * entrelinha, {
+      tamanho: 12,
+      cor: OURO,
+    });
+  });
 }
 
 function desenharRodape(doc: jsPDF, logo: HTMLImageElement | null): void {

@@ -760,8 +760,9 @@ export default function Receituario() {
   };
 
   const handlePDF = async () => {
-    const selected = getOrderedSelectedProducts();
-    if (selected.length === 0) {
+    const porBloco = getSelectedByBlock();
+    const temAlgum = skincareTimesOfDay.some((tod) => porBloco[tod].length > 0);
+    if (!temAlgum) {
       toast({ title: "Selecione ao menos um produto", variant: "destructive" });
       return;
     }
@@ -770,7 +771,7 @@ export default function Receituario() {
       await generateReceituarioPDF({
         patientName: patientName.trim() || undefined,
         clinicName: clinicSettings?.clinicName,
-        selectedProducts: selected,
+        productsByBlock: porBloco,
       });
     } catch {
       toast({ title: "Erro ao gerar PDF", variant: "destructive" });
@@ -784,19 +785,21 @@ export default function Receituario() {
     return localOrder[tod].map((id) => productMap[id]).filter(Boolean) as SkincareProduct[];
   };
 
-  // Returns ALL selected products across all blocks in display order (deduplicated)
-  const getOrderedSelectedProducts = (): SkincareProduct[] => {
-    const seen = new Set<string>();
-    const result: SkincareProduct[] = [];
+  /**
+   * Produtos selecionados de cada bloco, na ordem em que aparecem na tela.
+   *
+   * Um mesmo produto pode estar marcado em mais de um turno — é justamente o
+   * ponto da tela. Por isso devolvemos por bloco, sem remover repetidos: quem
+   * usa o mesmo sabonete de manhã e à noite precisa ver os dois no receituário.
+   */
+  const getSelectedByBlock = (): Record<SkincareTimeOfDay, SkincareProduct[]> => {
+    const porBloco = {} as Record<SkincareTimeOfDay, SkincareProduct[]>;
     for (const tod of skincareTimesOfDay) {
-      for (const p of getBlockProducts(tod)) {
-        if (selectedIds.has(selKey(p.id, tod)) && !seen.has(p.id)) {
-          seen.add(p.id);
-          result.push(p);
-        }
-      }
+      porBloco[tod] = getBlockProducts(tod).filter((p) =>
+        selectedIds.has(selKey(p.id, tod))
+      );
     }
-    return result;
+    return porBloco;
   };
 
   // Count unique product IDs that are selected in at least one block
@@ -891,7 +894,7 @@ export default function Receituario() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Receituário</h1>
+            <h1 className="text-2xl font-bold text-foreground">Rotina Skincare</h1>
             <p className="text-sm text-muted-foreground">
               Monte a rotina de skincare personalizada para o paciente
             </p>

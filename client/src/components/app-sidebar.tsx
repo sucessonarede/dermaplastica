@@ -60,7 +60,7 @@ const menuItems = [
     icon: FileText,
   },
   {
-    title: "Receituário",
+    title: "Rotina Skincare",
     url: "/receituario",
     icon: ClipboardList,
   },
